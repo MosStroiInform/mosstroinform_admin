@@ -8,10 +8,7 @@ import kotlinx.coroutines.withContext
 import platform.Foundation.NSData
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSURL
-import platform.Foundation.dataWithContentsOfURL
 import platform.UIKit.UIApplication
-import platform.UIKit.UIApplicationOpenURLOptionsKeyAnnotation
-import platform.UIKit.openURL
 
 actual suspend fun downloadAndOpenFile(
     url: String,
@@ -19,24 +16,25 @@ actual suspend fun downloadAndOpenFile(
     httpClient: HttpClient
 ): Result<Unit> {
     return try {
-        val nsUrl = NSURL(string = url)
-        val data: NSData? = withContext(Dispatchers.Default) {
-            NSData.dataWithContentsOfURL(nsUrl)
+        val bytes = withContext(Dispatchers.Default) {
+            httpClient.get(url).body<ByteArray>()
         }
         
-        if (data != null) {
+        if (bytes.isNotEmpty()) {
             val fileManager = NSFileManager.defaultManager
             val tempDir = fileManager.temporaryDirectory
             val fileUrl = tempDir.URLByAppendingPathComponent(fileName)
             
-            data.writeToURL(fileUrl, true, null)
+            // Создаем NSData из байтов
+            val nsData = NSData.create(bytes = bytes)
+            
+            // Записываем данные в файл
+            nsData.writeToURL(fileUrl, atomically = true)
             
             // Открываем файл через системный диалог
-            UIApplication.sharedApplication.openURL(
-                fileUrl,
-                options = mapOf(),
-                completionHandler = null
-            )
+            if (UIApplication.sharedApplication.canOpenURL(fileUrl)) {
+                UIApplication.sharedApplication.openURL(fileUrl)
+            }
         }
         
         Result.success(Unit)
@@ -44,4 +42,3 @@ actual suspend fun downloadAndOpenFile(
         Result.failure(e)
     }
 }
-

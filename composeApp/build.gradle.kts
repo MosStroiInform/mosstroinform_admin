@@ -169,10 +169,8 @@ compose.desktop {
             packageName = "com.vasmarfas.mosstroiinformadmin"
             packageVersion = "1.0.0"
             
-            // Явно включаем все необходимые модули в дистрибуцию
-            // ВАЖНО: modules() влияет только на создание дистрибутивов, но не на jvmRun
-            // Для jvmRun нужно убедиться, что зависимость есть в jvmMain.dependencies
-            modules("org.jetbrains.kotlinx:kotlinx-datetime")
+            // Убираем modules() чтобы избежать проблем с jlink
+            // Все зависимости автоматически включаются через jvmMain.dependencies
         }
     }
 }

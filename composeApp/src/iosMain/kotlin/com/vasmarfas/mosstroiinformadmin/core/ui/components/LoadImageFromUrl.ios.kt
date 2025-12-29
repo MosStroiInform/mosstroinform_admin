@@ -1,32 +1,32 @@
 package com.vasmarfas.mosstroiinformadmin.core.ui.components
 
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import platform.UIKit.UIImage
+import org.jetbrains.skia.Image
 import platform.Foundation.NSData
-import platform.Foundation.dataWithContentsOfURL
-import platform.Foundation.NSURL
-import org.jetbrains.skiko.toImageBitmap
+import platform.Foundation.dataWithBytes
 
 actual suspend fun loadImageFromUrl(
     url: String,
     httpClient: HttpClient
 ): ImageBitmap? {
     return try {
-        val nsUrl = NSURL(string = url)
-        val data: NSData? = withContext(Dispatchers.Default) {
-            NSData.dataWithContentsOfURL(nsUrl)
+        val bytes = withContext(Dispatchers.Default) {
+            httpClient.get(url).body<ByteArray>()
         }
-        if (data != null) {
-            val uiImage = UIImage(data = data)
-            uiImage?.toImageBitmap()
-        } else {
-            null
+        
+        if (bytes.isEmpty()) {
+            return null
         }
+        
+        // Используем Skia для декодирования изображения (как в JS/WASM)
+        val image = Image.makeFromEncoded(bytes)
+        image.toComposeImageBitmap()
     } catch (e: Exception) {
         null
     }
