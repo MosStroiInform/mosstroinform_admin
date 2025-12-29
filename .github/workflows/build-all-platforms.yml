@@ -1,18 +1,17 @@
-name: Build Release
+name: Build All Platforms
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version tag (e.g., v1.0.0)'
-        required: true
-        type: string
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'composeApp/**'
+      - '.github/workflows/build-all-platforms.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-android:
@@ -41,7 +40,7 @@ jobs:
         with:
           name: android-release
           path: composeApp/build/outputs/apk/release/*.apk
-          retention-days: 30
+          retention-days: 7
 
   build-jvm-linux:
     runs-on: ubuntu-latest
@@ -69,7 +68,7 @@ jobs:
         with:
           name: jvm-linux-distribution
           path: composeApp/build/compose/binaries/main/release/**/*
-          retention-days: 30
+          retention-days: 7
 
   build-jvm-windows:
     runs-on: windows-latest
@@ -94,7 +93,7 @@ jobs:
         with:
           name: jvm-windows-distribution
           path: composeApp/build/compose/binaries/main/release/**/*
-          retention-days: 30
+          retention-days: 7
 
   build-jvm-macos:
     runs-on: macos-latest
@@ -122,7 +121,7 @@ jobs:
         with:
           name: jvm-macos-distribution
           path: composeApp/build/compose/binaries/main/release/**/*
-          retention-days: 30
+          retention-days: 7
 
   build-ios:
     runs-on: macos-latest
@@ -143,14 +142,14 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build iOS Framework
-        run: ./gradlew :composeApp:linkReleaseFrameworkIosArm64 :composeApp:linkReleaseFrameworkIosSimulatorArm64 --no-daemon
+        run: ./gradlew :composeApp:linkDebugFrameworkIosArm64 :composeApp:linkDebugFrameworkIosSimulatorArm64 --no-daemon
 
       - name: Upload iOS Framework
         uses: actions/upload-artifact@v4
         with:
           name: ios-framework
           path: composeApp/build/framework/**/*
-          retention-days: 30
+          retention-days: 7
 
   build-js:
     runs-on: ubuntu-latest
@@ -170,8 +169,8 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Upgrade Yarn Lock (optional)
-        run: ./gradlew kotlinUpgradeYarnLock --no-daemon || true
+      - name: Upgrade Yarn Lock
+        run: ./gradlew kotlinUpgradeYarnLock --no-daemon
 
       - name: Build JS Distribution
         run: ./gradlew :composeApp:jsBrowserDistribution --no-daemon
@@ -181,7 +180,7 @@ jobs:
         with:
           name: js-distribution
           path: composeApp/build/dist/js/productionExecutable
-          retention-days: 30
+          retention-days: 7
 
   build-wasm:
     runs-on: ubuntu-latest
@@ -201,8 +200,8 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Upgrade Yarn Lock (optional)
-        run: ./gradlew kotlinUpgradeYarnLock --no-daemon || true
+      - name: Upgrade Yarn Lock
+        run: ./gradlew kotlinUpgradeYarnLock --no-daemon
 
       - name: Build WASM Distribution
         run: ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
@@ -212,26 +211,5 @@ jobs:
         with:
           name: wasm-distribution
           path: composeApp/build/dist/wasmJs/productionExecutable
-          retention-days: 30
+          retention-days: 7
 
-  create-release:
-    needs: [build-android, build-jvm-linux, build-jvm-windows, build-jvm-macos, build-ios, build-js, build-wasm]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            artifacts/**/*
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -32,8 +32,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
 
-      - name: Upgrade Yarn Lock
-        run: ./gradlew kotlinUpgradeYarnLock --no-daemon
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Upgrade Yarn Lock (optional)
+        run: ./gradlew kotlinUpgradeYarnLock --no-daemon || true
 
       - name: Build WASM
         run: ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
