@@ -1,0 +1,109 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-all:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [android, jvm, js, wasm]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Upgrade Yarn Lock (for web targets)
+        if: matrix.target == 'js' || matrix.target == 'wasm'
+        run: ./gradlew kotlinUpgradeYarnLock --no-daemon
+
+      - name: Build Android APK
+        if: matrix.target == 'android'
+        run: ./gradlew :composeApp:assembleRelease --no-daemon
+
+      - name: Build JVM Distribution
+        if: matrix.target == 'jvm'
+        run: ./gradlew :composeApp:packageReleaseDistributionForCurrentOS --no-daemon
+
+      - name: Build JS Distribution
+        if: matrix.target == 'js'
+        run: ./gradlew :composeApp:jsBrowserDistribution --no-daemon
+
+      - name: Build WASM Distribution
+        if: matrix.target == 'wasm'
+        run: ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
+
+      - name: Upload Android APK
+        if: matrix.target == 'android'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: composeApp/build/outputs/apk/release/*.apk
+          retention-days: 30
+
+      - name: Upload JVM Distribution
+        if: matrix.target == 'jvm'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jvm-distribution
+          path: composeApp/build/compose/binaries/main/release/**/*
+          retention-days: 30
+
+      - name: Upload JS Distribution
+        if: matrix.target == 'js'
+        uses: actions/upload-artifact@v4
+        with:
+          name: js-distribution
+          path: composeApp/build/dist/js/productionExecutable
+          retention-days: 30
+
+      - name: Upload WASM Distribution
+        if: matrix.target == 'wasm'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-distribution
+          path: composeApp/build/dist/wasmJs/productionExecutable
+          retention-days: 30
+
+  create-release:
+    needs: build-all
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/**/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

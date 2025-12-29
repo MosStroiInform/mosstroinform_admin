@@ -1,0 +1,147 @@
+package com.vasmarfas.mosstroiinformadmin.features.chats.presentation
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.vasmarfas.mosstroiinformadmin.core.data.models.Chat
+import com.vasmarfas.mosstroiinformadmin.core.data.models.Message
+import com.vasmarfas.mosstroiinformadmin.core.network.ApiResult
+import com.vasmarfas.mosstroiinformadmin.features.chats.data.ChatsRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+data class ChatDetailState(
+    val isLoading: Boolean = false,
+    val chat: Chat? = null,
+    val messages: List<Message> = emptyList(),
+    val error: String? = null,
+    val isSending: Boolean = false,
+    val isConnected: Boolean = false
+)
+
+class ChatDetailViewModel(
+    private val chatId: String,
+    private val repository: ChatsRepository
+) : ViewModel() {
+    
+    private val _state = MutableStateFlow(ChatDetailState())
+    val state: StateFlow<ChatDetailState> = _state.asStateFlow()
+    
+    private var currentChatId: String? = null
+    
+    init {
+        currentChatId = chatId
+        loadChat()
+        loadMessages()
+        connectWebSocket()
+    }
+    
+    // Проверяем, изменился ли chatId, и перезагружаем чат если нужно
+    fun updateChatId(newChatId: String) {
+        if (currentChatId != newChatId) {
+            // Отключаемся от старого WebSocket
+            repository.disconnectFromChat()
+            // Сбрасываем состояние
+            _state.value = ChatDetailState()
+            // Обновляем chatId
+            currentChatId = newChatId
+            // Загружаем новый чат
+            loadChat()
+            loadMessages()
+            connectWebSocket()
+        }
+    }
+    
+    private fun loadChat() {
+        viewModelScope.launch {
+            val idToLoad = currentChatId ?: chatId
+            when (val result = repository.getChat(idToLoad)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(chat = result.data)
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(error = result.message)
+                }
+                is ApiResult.Loading -> {}
+            }
+        }
+    }
+    
+    private fun loadMessages() {
+        viewModelScope.launch {
+            val idToLoad = currentChatId ?: chatId
+            _state.value = _state.value.copy(isLoading = true, error = null)
+            
+            when (val result = repository.getMessages(idToLoad)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        messages = result.data
+                    )
+                    markAsRead()
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = result.message
+                    )
+                }
+                is ApiResult.Loading -> {
+                    _state.value = _state.value.copy(isLoading = true)
+                }
+            }
+        }
+    }
+    
+    private fun connectWebSocket() {
+        viewModelScope.launch {
+            val idToLoad = currentChatId ?: chatId
+            repository.connectToChat(idToLoad).collect { message ->
+                _state.value = _state.value.copy(
+                    messages = _state.value.messages + message,
+                    isConnected = true
+                )
+            }
+        }
+    }
+    
+    fun sendMessage(text: String) {
+        if (text.isBlank()) return
+        
+        viewModelScope.launch {
+            val idToUse = currentChatId ?: chatId
+            _state.value = _state.value.copy(isSending = true)
+            
+            // Используем REST API для отправки
+            when (val result = repository.sendMessage(idToUse, text)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        messages = _state.value.messages + result.data,
+                        isSending = false
+                    )
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        error = result.message,
+                        isSending = false
+                    )
+                }
+                is ApiResult.Loading -> {}
+            }
+        }
+    }
+    
+    private fun markAsRead() {
+        viewModelScope.launch {
+            val idToUse = currentChatId ?: chatId
+            repository.markAsRead(idToUse)
+        }
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        repository.disconnectFromChat()
+    }
+}
+

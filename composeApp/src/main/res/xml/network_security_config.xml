@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Базовая конфигурация -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Доверяем системным сертификатам -->
+            <certificates src="system" />
+            <!-- Добавляем поддержку пользовательских сертификатов для отладки -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Для медиа-сервера -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">mosstroiinformmedia.vasmarfas.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>
+
