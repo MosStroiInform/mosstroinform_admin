@@ -7,8 +7,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import platform.Foundation.NSData
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSMutableData
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication
+import kotlinx.cinterop.usePinned
+import kotlinx.cinterop.addressOf
 
 actual suspend fun downloadAndOpenFile(
     url: String,
@@ -25,8 +28,12 @@ actual suspend fun downloadAndOpenFile(
             val tempDir = fileManager.temporaryDirectory
             val fileUrl = tempDir.URLByAppendingPathComponent(fileName)
             
-            // Создаем NSData из байтов
-            val nsData = NSData.create(bytes = bytes)
+            // Создаем NSData из байтов через usePinned и NSMutableData
+            val nsData = bytes.usePinned { pinned ->
+                val mutableData = NSMutableData()
+                mutableData.appendBytes(pinned.addressOf(0), bytes.size.toULong())
+                mutableData as NSData
+            }
             
             // Записываем данные в файл
             nsData.writeToURL(fileUrl, atomically = true)

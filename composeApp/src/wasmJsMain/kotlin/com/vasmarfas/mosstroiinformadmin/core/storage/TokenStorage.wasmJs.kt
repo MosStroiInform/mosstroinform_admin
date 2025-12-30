@@ -1,42 +1,64 @@
 package com.vasmarfas.mosstroiinformadmin.core.storage
 
-// WASM пока не имеет полного доступа к Web APIs, используем простую in-memory реализацию
-actual fun createTokenStorage(): TokenStorage = InMemoryTokenStorage()
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.OptIn
+
+// WASM использует localStorage через JS interop для сохранения токенов между перезагрузками
+actual fun createTokenStorage(): TokenStorage = LocalStorageTokenStorage()
+
+// External declaration для localStorage в WASM
+@OptIn(ExperimentalWasmJsInterop::class)
+private external object LocalStorage {
+    fun getItem(key: String): String?
+    fun setItem(key: String, value: String)
+    fun removeItem(key: String)
+}
+
+@OptIn(ExperimentalWasmJsInterop::class)
+private val localStorage: LocalStorage = js("localStorage")
 
 /**
- * In-memory реализация для WASM (пока WASM не поддерживает localStorage)
+ * Реализация на базе browser localStorage для WASM платформы через JS interop
  */
-private class InMemoryTokenStorage : TokenStorage {
-    private val storage = mutableMapOf<String, String>()
+private class LocalStorageTokenStorage : TokenStorage {
     
     override suspend fun saveAccessToken(token: String) {
-        storage[KEY_ACCESS_TOKEN] = token
+        localStorage.setItem(KEY_ACCESS_TOKEN, token)
     }
     
-    override suspend fun getAccessToken(): String? = storage[KEY_ACCESS_TOKEN]
+    override suspend fun getAccessToken(): String? {
+        return localStorage.getItem(KEY_ACCESS_TOKEN)?.takeIf { it.isNotEmpty() }
+    }
     
     override suspend fun saveRefreshToken(token: String) {
-        storage[KEY_REFRESH_TOKEN] = token
+        localStorage.setItem(KEY_REFRESH_TOKEN, token)
     }
     
-    override suspend fun getRefreshToken(): String? = storage[KEY_REFRESH_TOKEN]
+    override suspend fun getRefreshToken(): String? {
+        return localStorage.getItem(KEY_REFRESH_TOKEN)?.takeIf { it.isNotEmpty() }
+    }
     
     override suspend fun saveUser(id: String, email: String, name: String, phone: String?) {
-        storage[KEY_USER_ID] = id
-        storage[KEY_USER_EMAIL] = email
-        storage[KEY_USER_NAME] = name
-        phone?.let { storage[KEY_USER_PHONE] = it }
+        localStorage.setItem(KEY_USER_ID, id)
+        localStorage.setItem(KEY_USER_EMAIL, email)
+        localStorage.setItem(KEY_USER_NAME, name)
+        phone?.let { localStorage.setItem(KEY_USER_PHONE, it) }
     }
     
-    override suspend fun getUserId(): String? = storage[KEY_USER_ID]
-    override suspend fun getUserEmail(): String? = storage[KEY_USER_EMAIL]
-    override suspend fun getUserName(): String? = storage[KEY_USER_NAME]
-    override suspend fun getUserPhone(): String? = storage[KEY_USER_PHONE]
+    override suspend fun getUserId(): String? = localStorage.getItem(KEY_USER_ID)?.takeIf { it.isNotEmpty() }
+    override suspend fun getUserEmail(): String? = localStorage.getItem(KEY_USER_EMAIL)?.takeIf { it.isNotEmpty() }
+    override suspend fun getUserName(): String? = localStorage.getItem(KEY_USER_NAME)?.takeIf { it.isNotEmpty() }
+    override suspend fun getUserPhone(): String? = localStorage.getItem(KEY_USER_PHONE)?.takeIf { it.isNotEmpty() }
     
     override suspend fun isLoggedIn(): Boolean = getAccessToken() != null
     
     override suspend fun clear() {
-        storage.clear()
+        localStorage.removeItem(KEY_ACCESS_TOKEN)
+        localStorage.removeItem(KEY_REFRESH_TOKEN)
+        localStorage.removeItem(KEY_USER_ID)
+        localStorage.removeItem(KEY_USER_EMAIL)
+        localStorage.removeItem(KEY_USER_NAME)
+        localStorage.removeItem(KEY_USER_PHONE)
     }
     
     companion object {
@@ -48,4 +70,3 @@ private class InMemoryTokenStorage : TokenStorage {
         private const val KEY_USER_PHONE = "user_phone"
     }
 }
-

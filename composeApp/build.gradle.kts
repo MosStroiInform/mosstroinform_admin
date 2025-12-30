@@ -172,6 +172,15 @@ compose.desktop {
             // Убираем modules() чтобы избежать проблем с jlink
             // Все зависимости автоматически включаются через jvmMain.dependencies
         }
+        
+        // Отключаем ProGuard для release сборки
+        buildTypes {
+            release {
+                proguard {
+                    isEnabled.set(false)
+                }
+            }
+        }
     }
 }
 
