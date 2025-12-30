@@ -169,11 +169,9 @@ jobs:
         with:
           name: ios-framework
           path: |
-            composeApp/build/binaries/iosArm64/releaseFramework/ComposeApp.framework
-            composeApp/build/binaries/iosSimulatorArm64/releaseFramework/ComposeApp.framework
-            composeApp/build/binaries/iosArm64/releaseFramework/**
-            composeApp/build/binaries/iosSimulatorArm64/releaseFramework/**
-          if-no-files-found: warn
+            composeApp/build/bin/iosArm64/releaseFramework/ComposeApp.framework
+            composeApp/build/bin/iosSimulatorArm64/releaseFramework/ComposeApp.framework
+          if-no-files-found: error
           retention-days: 30
 
   build-js:
@@ -267,7 +265,44 @@ jobs:
       - name: List artifacts
         run: |
           echo "Artifacts structure:"
-          find artifacts -type f -name "*.apk" -o -name "*.msi" -o -name "*.dmg" -o -name "*.deb" -o -name "*.framework" | head -20
+          find artifacts -type f | head -30
+          echo ""
+          echo "iOS frameworks:"
+          find artifacts -name "*.framework" -type d | head -10
+
+      - name: Prepare release files
+        run: |
+          # Создаем список уникальных файлов для загрузки
+          mkdir -p release_files
+          
+          # Копируем APK
+          find artifacts -name "*.apk" -exec cp {} release_files/ \;
+          
+          # Копируем JVM дистрибутивы
+          find artifacts -name "*.msi" -o -name "*.dmg" -o -name "*.deb" -exec cp {} release_files/ \;
+          
+          # Копируем iOS фреймворки (как zip архивы)
+          for framework in $(find artifacts -name "*.framework" -type d); do
+            framework_name=$(basename "$framework")
+            zip -r "release_files/${framework_name}.zip" "$framework"
+          done
+          
+          # Копируем JS/WASM файлы (только уникальные, избегая дубликатов)
+          if [ -d "artifacts/js-distribution" ]; then
+            # Берем только index.html из js-distribution
+            cp artifacts/js-distribution/index.html release_files/js-index.html 2>/dev/null || true
+            # Копируем JS файлы
+            find artifacts/js-distribution -name "*.js" -exec cp {} release_files/ \;
+          fi
+          if [ -d "artifacts/wasm-distribution" ]; then
+            # Берем только index.html из wasm-distribution
+            cp artifacts/wasm-distribution/index.html release_files/wasm-index.html 2>/dev/null || true
+            # Копируем WASM файлы
+            find artifacts/wasm-distribution -name "*.wasm" -exec cp {} release_files/ \;
+          fi
+          
+          echo "Release files prepared:"
+          ls -lh release_files/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -275,16 +310,14 @@ jobs:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: Release ${{ steps.tag.outputs.tag }}
           files: |
-            artifacts/**/*.apk
-            artifacts/**/*.msi
-            artifacts/**/*.dmg
-            artifacts/**/*.deb
-            artifacts/**/*.tar.gz
-            artifacts/**/*.zip
-            artifacts/**/*.framework
-            artifacts/**/*.js
-            artifacts/**/*.html
-            artifacts/**/*.wasm
+            release_files/*.apk
+            release_files/*.msi
+            release_files/*.dmg
+            release_files/*.deb
+            release_files/*.zip
+            release_files/*.js
+            release_files/*.wasm
+            release_files/*.html
           draft: false
           prerelease: false
           generate_release_notes: true
