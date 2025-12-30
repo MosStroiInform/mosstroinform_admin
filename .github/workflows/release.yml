@@ -147,6 +147,8 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build iOS Framework
+        env:
+          GRADLE_OPTS: "-Xmx8192M -Xms2048M"
         run: ./gradlew :composeApp:linkReleaseFrameworkIosArm64 :composeApp:linkReleaseFrameworkIosSimulatorArm64 --no-daemon
 
       - name: Upload iOS Framework
