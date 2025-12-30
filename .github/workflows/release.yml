@@ -65,11 +65,18 @@ jobs:
       - name: Build JVM Linux Distribution
         run: ./gradlew :composeApp:packageReleaseDistributionForCurrentOS --no-daemon
 
+      - name: Find JVM Linux files
+        run: |
+          echo "Searching for Linux distribution files..."
+          find composeApp/build/compose/binaries/main-release -type f | head -10
+
       - name: Upload JVM Linux Distribution
         uses: actions/upload-artifact@v4
         with:
           name: jvm-linux-distribution
-          path: composeApp/build/compose/binaries/main-release/**/*
+          path: |
+            composeApp/build/compose/binaries/main-release/deb/**/*
+            composeApp/build/compose/binaries/main-release/**/*.deb
           if-no-files-found: error
           retention-days: 30
 
@@ -91,11 +98,19 @@ jobs:
       - name: Build JVM Windows Distribution
         run: .\gradlew.bat :composeApp:packageReleaseDistributionForCurrentOS --no-daemon
 
+      - name: Find JVM Windows files
+        run: |
+          echo "Searching for Windows distribution files..."
+          Get-ChildItem -Path composeApp/build/compose/binaries/main-release -Recurse -File | Select-Object FullName -First 10
+
       - name: Upload JVM Windows Distribution
         uses: actions/upload-artifact@v4
         with:
           name: jvm-windows-distribution
-          path: composeApp/build/compose/binaries/main-release/**/*
+          path: |
+            composeApp/build/compose/binaries/main-release/msi/**/*
+            composeApp/build/compose/binaries/main-release/**/*.msi
+            composeApp/build/compose/binaries/main-release/**/*.exe
           if-no-files-found: error
           retention-days: 30
 
@@ -120,11 +135,18 @@ jobs:
       - name: Build JVM macOS Distribution
         run: ./gradlew :composeApp:packageReleaseDistributionForCurrentOS --no-daemon
 
+      - name: Find JVM macOS files
+        run: |
+          echo "Searching for macOS distribution files..."
+          find composeApp/build/compose/binaries/main-release -type f | head -10
+
       - name: Upload JVM macOS Distribution
         uses: actions/upload-artifact@v4
         with:
           name: jvm-macos-distribution
-          path: composeApp/build/compose/binaries/main-release/**/*
+          path: |
+            composeApp/build/compose/binaries/main-release/dmg/**/*
+            composeApp/build/compose/binaries/main-release/**/*.dmg
           if-no-files-found: error
           retention-days: 30
 
@@ -174,37 +196,37 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  build-js:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Upgrade Yarn Lock (optional)
-        run: ./gradlew kotlinUpgradeYarnLock --no-daemon || true
-
-      - name: Build JS Distribution
-        run: ./gradlew :composeApp:jsBrowserDistribution --no-daemon
-
-      - name: Upload JS Distribution
-        uses: actions/upload-artifact@v4
-        with:
-          name: js-distribution
-          path: composeApp/build/dist/js/productionExecutable
-          if-no-files-found: error
-          retention-days: 30
+  # build-js:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup JDK
+  #       uses: actions/setup-java@v4
+  #       with:
+  #         java-version: '17'
+  #         distribution: 'temurin'
+  #
+  #     - name: Setup Gradle
+  #       uses: gradle/gradle-build-action@v2
+  #
+  #     - name: Make gradlew executable
+  #       run: chmod +x ./gradlew
+  #
+  #     - name: Upgrade Yarn Lock (optional)
+  #       run: ./gradlew kotlinUpgradeYarnLock --no-daemon || true
+  #
+  #     - name: Build JS Distribution
+  #       run: ./gradlew :composeApp:jsBrowserDistribution --no-daemon
+  #
+  #     - name: Upload JS Distribution
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: js-distribution
+  #         path: composeApp/build/dist/js/productionExecutable
+  #         if-no-files-found: error
+  #         retention-days: 30
 
   build-wasm:
     runs-on: ubuntu-latest
@@ -239,7 +261,7 @@ jobs:
           retention-days: 30
 
   create-release:
-    needs: [build-android, build-jvm-linux, build-jvm-windows, build-jvm-macos, build-ios, build-js, build-wasm]
+    needs: [build-android, build-jvm-linux, build-jvm-windows, build-jvm-macos, build-ios, build-wasm]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
@@ -278,8 +300,10 @@ jobs:
           # Копируем APK
           find artifacts -name "*.apk" -exec cp {} release_files/ \;
           
-          # Копируем JVM дистрибутивы
-          find artifacts -name "*.msi" -o -name "*.dmg" -o -name "*.deb" -exec cp {} release_files/ \;
+          # Копируем JVM дистрибутивы (msi, dmg, deb, exe)
+          find artifacts -name "*.msi" -o -name "*.dmg" -o -name "*.deb" -o -name "*.exe" | while read file; do
+            cp "$file" release_files/
+          done
           
           # Копируем iOS фреймворки (как zip архивы)
           for framework in $(find artifacts -name "*.framework" -type d); do
@@ -287,19 +311,14 @@ jobs:
             zip -r "release_files/${framework_name}.zip" "$framework"
           done
           
-          # Копируем JS/WASM файлы (только уникальные, избегая дубликатов)
-          if [ -d "artifacts/js-distribution" ]; then
-            # Берем только index.html из js-distribution
-            cp artifacts/js-distribution/index.html release_files/js-index.html 2>/dev/null || true
-            # Копируем JS файлы
-            find artifacts/js-distribution -name "*.js" -exec cp {} release_files/ \;
-          fi
+          # Упаковываем WASM в zip архив
           if [ -d "artifacts/wasm-distribution" ]; then
-            # Берем только index.html из wasm-distribution
-            cp artifacts/wasm-distribution/index.html release_files/wasm-index.html 2>/dev/null || true
-            # Копируем WASM файлы
-            find artifacts/wasm-distribution -name "*.wasm" -exec cp {} release_files/ \;
+            cd artifacts/wasm-distribution
+            zip -r ../../release_files/wasm-distribution.zip .
+            cd ../..
           fi
+          
+          # JS закомментирован, не упаковываем
           
           echo "Release files prepared:"
           ls -lh release_files/
@@ -314,10 +333,8 @@ jobs:
             release_files/*.msi
             release_files/*.dmg
             release_files/*.deb
+            release_files/*.exe
             release_files/*.zip
-            release_files/*.js
-            release_files/*.wasm
-            release_files/*.html
           draft: false
           prerelease: false
           generate_release_notes: true
