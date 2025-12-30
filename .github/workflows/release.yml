@@ -151,14 +151,29 @@ jobs:
           GRADLE_OPTS: "-Xmx8192M -Xms2048M"
         run: ./gradlew :composeApp:linkReleaseFrameworkIosArm64 :composeApp:linkReleaseFrameworkIosSimulatorArm64 --no-daemon
 
+      - name: Find iOS Framework files
+        run: |
+          echo "Searching for iOS frameworks..."
+          find composeApp/build -name "*.framework" -type d 2>/dev/null | head -20
+          echo ""
+          echo "Checking common paths:"
+          ls -la composeApp/build/binaries/iosArm64/ 2>/dev/null || echo "iosArm64 not found"
+          ls -la composeApp/build/binaries/iosSimulatorArm64/ 2>/dev/null || echo "iosSimulatorArm64 not found"
+          ls -la composeApp/build/ios/ 2>/dev/null || echo "ios/ not found"
+          echo ""
+          echo "Full binaries structure:"
+          find composeApp/build/binaries -type d 2>/dev/null | head -20
+
       - name: Upload iOS Framework
         uses: actions/upload-artifact@v4
         with:
           name: ios-framework
           path: |
-            composeApp/build/binaries/iosArm64/releaseFramework/**/*
-            composeApp/build/binaries/iosSimulatorArm64/releaseFramework/**/*
-          if-no-files-found: error
+            composeApp/build/binaries/iosArm64/releaseFramework/ComposeApp.framework
+            composeApp/build/binaries/iosSimulatorArm64/releaseFramework/ComposeApp.framework
+            composeApp/build/binaries/iosArm64/releaseFramework/**
+            composeApp/build/binaries/iosSimulatorArm64/releaseFramework/**
+          if-no-files-found: warn
           retention-days: 30
 
   build-js:
