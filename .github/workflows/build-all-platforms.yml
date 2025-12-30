@@ -67,7 +67,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jvm-linux-distribution
-          path: composeApp/build/compose/binaries/main/release/**/*
+          path: composeApp/build/compose/binaries/main-release/**/*
           retention-days: 7
 
   build-jvm-windows:
@@ -92,7 +92,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jvm-windows-distribution
-          path: composeApp/build/compose/binaries/main/release/**/*
+          path: composeApp/build/compose/binaries/main-release/**/*
           retention-days: 7
 
   build-jvm-macos:
@@ -120,7 +120,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jvm-macos-distribution
-          path: composeApp/build/compose/binaries/main/release/**/*
+          path: composeApp/build/compose/binaries/main-release/**/*
           retention-days: 7
 
   build-ios:
@@ -148,7 +148,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ios-framework
-          path: composeApp/build/framework/**/*
+          path: |
+            composeApp/build/binaries/iosArm64/debugFramework/**/*
+            composeApp/build/binaries/iosSimulatorArm64/debugFramework/**/*
           retention-days: 7
 
   build-js:

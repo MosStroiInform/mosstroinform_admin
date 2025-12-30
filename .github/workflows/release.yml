@@ -41,6 +41,7 @@ jobs:
         with:
           name: android-release
           path: composeApp/build/outputs/apk/release/*.apk
+          if-no-files-found: error
           retention-days: 30
 
   build-jvm-linux:
@@ -68,7 +69,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jvm-linux-distribution
-          path: composeApp/build/compose/binaries/main/release/**/*
+          path: composeApp/build/compose/binaries/main-release/**/*
+          if-no-files-found: error
           retention-days: 30
 
   build-jvm-windows:
@@ -93,7 +95,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jvm-windows-distribution
-          path: composeApp/build/compose/binaries/main/release/**/*
+          path: composeApp/build/compose/binaries/main-release/**/*
+          if-no-files-found: error
           retention-days: 30
 
   build-jvm-macos:
@@ -121,7 +124,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jvm-macos-distribution
-          path: composeApp/build/compose/binaries/main/release/**/*
+          path: composeApp/build/compose/binaries/main-release/**/*
+          if-no-files-found: error
           retention-days: 30
 
   build-ios:
@@ -149,7 +153,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ios-framework
-          path: composeApp/build/framework/**/*
+          path: |
+            composeApp/build/binaries/iosArm64/releaseFramework/**/*
+            composeApp/build/binaries/iosSimulatorArm64/releaseFramework/**/*
+          if-no-files-found: error
           retention-days: 30
 
   build-js:
@@ -181,6 +188,7 @@ jobs:
         with:
           name: js-distribution
           path: composeApp/build/dist/js/productionExecutable
+          if-no-files-found: error
           retention-days: 30
 
   build-wasm:
@@ -212,11 +220,13 @@ jobs:
         with:
           name: wasm-distribution
           path: composeApp/build/dist/wasmJs/productionExecutable
+          if-no-files-found: error
           retention-days: 30
 
   create-release:
     needs: [build-android, build-jvm-linux, build-jvm-windows, build-jvm-macos, build-ios, build-js, build-wasm]
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -226,12 +236,40 @@ jobs:
         with:
           path: artifacts
 
+      - name: Get tag name
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            TAG_NAME="${{ github.ref_name }}"
+          else
+            TAG_NAME="${{ github.event.inputs.version }}"
+          fi
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "Tag name: $TAG_NAME"
+
+      - name: List artifacts
+        run: |
+          echo "Artifacts structure:"
+          find artifacts -type f -name "*.apk" -o -name "*.msi" -o -name "*.dmg" -o -name "*.deb" -o -name "*.framework" | head -20
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Release ${{ steps.tag.outputs.tag }}
           files: |
-            artifacts/**/*
+            artifacts/**/*.apk
+            artifacts/**/*.msi
+            artifacts/**/*.dmg
+            artifacts/**/*.deb
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+            artifacts/**/*.framework
+            artifacts/**/*.js
+            artifacts/**/*.html
+            artifacts/**/*.wasm
           draft: false
           prerelease: false
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
