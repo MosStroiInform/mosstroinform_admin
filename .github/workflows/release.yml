@@ -102,7 +102,36 @@ jobs:
         uses: gradle/gradle-build-action@v2
 
       - name: Build JVM Windows Distribution
-        run: .\gradlew.bat :composeApp:packageReleaseDistributionForCurrentOS --no-daemon
+        run: |
+          # Собираем дистрибутив для Windows
+          # Используем --stacktrace для лучшей диагностики при ошибках
+          .\gradlew.bat :composeApp:packageReleaseDistributionForCurrentOS --no-daemon --stacktrace
+          
+          # Сохраняем код выхода
+          $buildExitCode = $LASTEXITCODE
+          
+          # Если MSI не собрался, проверяем логи и пробуем альтернативы
+          if ($buildExitCode -ne 0) {
+            echo "Build failed with exit code $buildExitCode"
+            echo "Checking error logs..."
+            if (Test-Path "composeApp/build/compose/logs/packageReleaseMsi") {
+              echo "=== MSI Error Log ==="
+              Get-Content "composeApp/build/compose/logs/packageReleaseMsi/jpackage-*-err.txt" -ErrorAction SilentlyContinue | Select-Object -Last 50
+              echo "=== MSI Output Log ==="
+              Get-Content "composeApp/build/compose/logs/packageReleaseMsi/jpackage-*-out.txt" -ErrorAction SilentlyContinue | Select-Object -Last 50
+            }
+            
+            # Пробуем собрать только EXE как fallback (если MSI не работает)
+            echo "Trying to build EXE only as fallback..."
+            .\gradlew.bat :composeApp:packageReleaseExe --no-daemon
+            if ($LASTEXITCODE -eq 0) {
+              echo "EXE build succeeded!"
+            } else {
+              echo "EXE build also failed"
+            }
+          } else {
+            echo "Build succeeded!"
+          }
 
       - name: Find JVM Windows files
         run: |
@@ -120,6 +149,34 @@ jobs:
           echo "EXE files:"
           Get-ChildItem -Path composeApp/build/compose/binaries -Recurse -Filter "*.exe" | Select-Object FullName
 
+      - name: Verify Windows build artifacts
+        run: |
+          $foundFiles = $false
+          if (Test-Path "composeApp/build/compose/binaries/main-release") {
+            $msiFiles = Get-ChildItem -Path composeApp/build/compose/binaries/main-release -Recurse -Filter "*.msi" -ErrorAction SilentlyContinue
+            $exeFiles = Get-ChildItem -Path composeApp/build/compose/binaries/main-release -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue
+            
+            if ($msiFiles) {
+              echo "Found MSI files:"
+              $msiFiles | ForEach-Object { echo "  $($_.FullName)" }
+              $foundFiles = $true
+            }
+            if ($exeFiles) {
+              echo "Found EXE files:"
+              $exeFiles | ForEach-Object { echo "  $($_.FullName)" }
+              $foundFiles = $true
+            }
+          }
+          
+          if (-not $foundFiles) {
+            echo "Warning: No MSI or EXE files found!"
+            echo "Checking all binaries..."
+            Get-ChildItem -Path composeApp/build/compose/binaries -Recurse -File | Select-Object FullName -First 20
+            exit 1
+          } else {
+            echo "Build artifacts verified successfully"
+          }
+
       - name: Upload JVM Windows Distribution
         uses: actions/upload-artifact@v4
         with:
@@ -128,7 +185,7 @@ jobs:
             composeApp/build/compose/binaries/main-release/msi/**/*
             composeApp/build/compose/binaries/main-release/**/*.msi
             composeApp/build/compose/binaries/main-release/**/*.exe
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
 
   build-jvm-macos:

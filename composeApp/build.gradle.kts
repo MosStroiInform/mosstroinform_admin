@@ -165,7 +165,7 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "MosStroiInform Admin"
+            packageName = "MosStroiInformAdmin"
             packageVersion = "1.0.0"
             
             description = "Административная панель MosStroiInform"
@@ -174,6 +174,7 @@ compose.desktop {
             windows {
                 menuGroup = "MosStroiInform"
                 shortcut = true
+                upgradeUuid = "18159995-d967-4cd2-8885-77BFA97CFA9F"
             }
             
             macOS {
