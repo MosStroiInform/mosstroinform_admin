@@ -56,7 +56,27 @@ fun MainApp() {
             var currentScreen by remember { mutableStateOf<Screen?>(null) }
             
             LaunchedEffect(Unit) {
-                currentScreen = if (authRepository.isLoggedIn()) Screen.MAIN else Screen.LOGIN
+                // Проверяем авторизацию асинхронно
+                val isLoggedIn = authRepository.isLoggedIn()
+                currentScreen = if (isLoggedIn) {
+                    // Дополнительно проверяем, что токен валидный
+                    try {
+                        val userResult = authRepository.getMe()
+                        if (userResult is com.vasmarfas.mosstroiinformadmin.core.network.ApiResult.Success) {
+                            Screen.MAIN
+                        } else {
+                            // Токен невалидный, очищаем и показываем логин
+                            authRepository.logout()
+                            Screen.LOGIN
+                        }
+                    } catch (e: Exception) {
+                        // Ошибка при проверке, показываем логин
+                        authRepository.logout()
+                        Screen.LOGIN
+                    }
+                } else {
+                    Screen.LOGIN
+                }
             }
             
             AnimatedContent(

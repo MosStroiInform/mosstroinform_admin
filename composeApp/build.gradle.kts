@@ -143,7 +143,6 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
-            // Оптимизации для production
             isDebuggable = false
         }
         getByName("debug") {
@@ -166,11 +165,27 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.vasmarfas.mosstroiinformadmin"
+            packageName = "MosStroiInform Admin"
             packageVersion = "1.0.0"
             
-            // Убираем modules() чтобы избежать проблем с jlink
-            // Все зависимости автоматически включаются через jvmMain.dependencies
+            description = "Административная панель MosStroiInform"
+            vendor = "vasmarfas"
+
+            windows {
+                menuGroup = "MosStroiInform"
+                shortcut = true
+            }
+            
+            macOS {
+                bundleID = "com.vasmarfas.mosstroiinformadmin"
+                packageVersion = "1.0.0"
+            }
+            
+            linux {
+                packageName = "mosstroiinform-admin"
+                menuGroup = "Office"
+                appCategory = "Office"
+            }
         }
         
         // Отключаем ProGuard для release сборки

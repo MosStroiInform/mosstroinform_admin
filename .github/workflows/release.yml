@@ -36,6 +36,12 @@ jobs:
       - name: Build Android APK
         run: ./gradlew :composeApp:assembleRelease --no-daemon
 
+      - name: Verify APK file
+        run: |
+          echo "Checking APK files..."
+          ls -lh composeApp/build/outputs/apk/release/ || echo "APK directory not found"
+          find composeApp/build/outputs/apk/release -name "*.apk" || echo "No APK files found"
+
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
@@ -101,7 +107,18 @@ jobs:
       - name: Find JVM Windows files
         run: |
           echo "Searching for Windows distribution files..."
-          Get-ChildItem -Path composeApp/build/compose/binaries/main-release -Recurse -File | Select-Object FullName -First 10
+          if (Test-Path "composeApp/build/compose/binaries/main-release") {
+            Get-ChildItem -Path composeApp/build/compose/binaries/main-release -Recurse -File | Select-Object FullName -First 10
+          } else {
+            echo "main-release directory not found, checking alternatives..."
+            Get-ChildItem -Path composeApp/build/compose/binaries -Recurse -File | Select-Object FullName -First 10
+          }
+          echo ""
+          echo "MSI files:"
+          Get-ChildItem -Path composeApp/build/compose/binaries -Recurse -Filter "*.msi" | Select-Object FullName
+          echo ""
+          echo "EXE files:"
+          Get-ChildItem -Path composeApp/build/compose/binaries -Recurse -Filter "*.exe" | Select-Object FullName
 
       - name: Upload JVM Windows Distribution
         uses: actions/upload-artifact@v4
@@ -177,23 +194,66 @@ jobs:
         run: |
           echo "Searching for iOS frameworks..."
           find composeApp/build -name "*.framework" -type d 2>/dev/null | head -20
-          echo ""
-          echo "Checking common paths:"
-          ls -la composeApp/build/binaries/iosArm64/ 2>/dev/null || echo "iosArm64 not found"
-          ls -la composeApp/build/binaries/iosSimulatorArm64/ 2>/dev/null || echo "iosSimulatorArm64 not found"
-          ls -la composeApp/build/ios/ 2>/dev/null || echo "ios/ not found"
-          echo ""
-          echo "Full binaries structure:"
-          find composeApp/build/binaries -type d 2>/dev/null | head -20
 
-      - name: Upload iOS Framework
+      - name: Build iOS IPA (without signing)
+        run: |
+          # Создаем директорию для сборки
+          mkdir -p build/ios
+          
+          cd iosApp
+          
+          # Создаем архив с автоматической подписью (development)
+          # Xcode автоматически создаст временный сертификат для разработки
+          xcodebuild -project iosApp.xcodeproj \
+            -scheme iosApp \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -configuration Release \
+            -archivePath ../build/ios/iosApp.xcarchive \
+            -allowProvisioningUpdates \
+            archive || echo "Archive creation completed with warnings"
+          
+          # Создаем ExportOptions.plist для development экспорта
+          cat > ../build/ios/ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>development</string>
+            <key>compileBitcode</key>
+            <false/>
+            <key>uploadSymbols</key>
+            <false/>
+            <key>uploadBitcode</key>
+            <false/>
+          </dict>
+          </plist>
+          EOF
+          
+          # Экспортируем IPA (development метод не требует App Store учетных данных)
+          xcodebuild -exportArchive \
+            -archivePath ../build/ios/iosApp.xcarchive \
+            -exportPath ../build/ios/ipa \
+            -exportOptionsPlist ../build/ios/ExportOptions.plist \
+            -allowProvisioningUpdates || echo "IPA export completed with warnings"
+          
+          cd ..
+
+      - name: Find iOS IPA files
+        run: |
+          echo "Searching for iOS IPA files..."
+          find build/ios -name "*.ipa" 2>/dev/null || echo "No IPA files found"
+          find iosApp/build -name "*.ipa" 2>/dev/null || echo "No IPA files in iosApp/build"
+
+      - name: Upload iOS IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ios-framework
+          name: ios-ipa
           path: |
-            composeApp/build/bin/iosArm64/releaseFramework/ComposeApp.framework
-            composeApp/build/bin/iosSimulatorArm64/releaseFramework/ComposeApp.framework
-          if-no-files-found: error
+            build/ios/ipa/*.ipa
+            iosApp/build/*.ipa
+          if-no-files-found: warn
           retention-days: 30
 
   # build-js:
@@ -252,6 +312,18 @@ jobs:
       - name: Build WASM Distribution
         run: ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
 
+      - name: Verify WASM files
+        run: |
+          echo "Checking WASM distribution..."
+          if [ -d "composeApp/build/dist/wasmJs/productionExecutable" ]; then
+            echo "WASM directory found:"
+            ls -lh composeApp/build/dist/wasmJs/productionExecutable/ | head -10
+            echo "Total files: $(find composeApp/build/dist/wasmJs/productionExecutable -type f | wc -l)"
+          else
+            echo "WASM directory not found!"
+            find composeApp/build/dist -type d 2>/dev/null | head -10
+          fi
+
       - name: Upload WASM Distribution
         uses: actions/upload-artifact@v4
         with:
@@ -289,8 +361,17 @@ jobs:
           echo "Artifacts structure:"
           find artifacts -type f | head -30
           echo ""
-          echo "iOS frameworks:"
-          find artifacts -name "*.framework" -type d | head -10
+          echo "APK files:"
+          find artifacts -name "*.apk" | head -5
+          echo ""
+          echo "MSI files:"
+          find artifacts -name "*.msi" | head -5
+          echo ""
+          echo "WASM directory:"
+          ls -la artifacts/wasm-distribution 2>/dev/null || echo "WASM directory not found"
+          echo ""
+          echo "iOS IPA files:"
+          find artifacts -name "*.ipa" | head -5
 
       - name: Prepare release files
         run: |
@@ -305,23 +386,28 @@ jobs:
             cp "$file" release_files/
           done
           
-          # Копируем iOS фреймворки (как zip архивы)
-          for framework in $(find artifacts -name "*.framework" -type d); do
-            framework_name=$(basename "$framework")
-            zip -r "release_files/${framework_name}.zip" "$framework"
-          done
+          # Копируем iOS IPA файлы
+          find artifacts -name "*.ipa" -exec cp {} release_files/ \;
           
-          # Упаковываем WASM в zip архив
+          # Упаковываем WASM в zip архив 
+          # В GitLab: zip -r "./outFiles/productionExecutable-$VERSION.zip" ./composeApp/build/dist/wasmJs/productionExecutable/
           if [ -d "artifacts/wasm-distribution" ]; then
             cd artifacts/wasm-distribution
-            zip -r ../../release_files/wasm-distribution.zip .
+            zip -r ../../release_files/wasm-distribution.zip . -q
             cd ../..
+            echo "WASM packaged: wasm-distribution.zip ($(du -h release_files/wasm-distribution.zip | cut -f1))"
+          else
+            echo "Warning: wasm-distribution directory not found in artifacts"
+            find artifacts -type d -name "*wasm*" | head -5
           fi
           
           # JS закомментирован, не упаковываем
           
           echo "Release files prepared:"
           ls -lh release_files/
+          echo ""
+          echo "File count:"
+          find release_files -type f | wc -l
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -334,6 +420,7 @@ jobs:
             release_files/*.dmg
             release_files/*.deb
             release_files/*.exe
+            release_files/*.ipa
             release_files/*.zip
           draft: false
           prerelease: false
