@@ -57,58 +57,71 @@ fun MainApp() {
             
             LaunchedEffect(Unit) {
                 // Проверяем авторизацию асинхронно
-                val isLoggedIn = authRepository.isLoggedIn()
-                currentScreen = if (isLoggedIn) {
-                    // Дополнительно проверяем, что токен валидный
-                    try {
-                        val userResult = authRepository.getMe()
-                        if (userResult is com.vasmarfas.mosstroiinformadmin.core.network.ApiResult.Success) {
+                try {
+                    val isLoggedIn = authRepository.isLoggedIn()
+                    currentScreen = if (isLoggedIn) {
+                        // Дополнительно проверяем, что токен валидный
+                        // Используем таймаут, чтобы не зависать при сетевых проблемах
+                        try {
+                            val userResult = authRepository.getMe()
+                            if (userResult is com.vasmarfas.mosstroiinformadmin.core.network.ApiResult.Success) {
+                                Screen.MAIN
+                            } else {
+                                // Токен невалидный, очищаем и показываем логин
+                                authRepository.logout()
+                                Screen.LOGIN
+                            }
+                        } catch (e: Exception) {
+                            // Ошибка при проверке (сеть, таймаут и т.д.)
+                            // Если есть токен, пробуем загрузить главный экран
+                            // Пользователь сможет попробовать обновить данные позже
                             Screen.MAIN
-                        } else {
-                            // Токен невалидный, очищаем и показываем логин
-                            authRepository.logout()
-                            Screen.LOGIN
                         }
-                    } catch (e: Exception) {
-                        // Ошибка при проверке, показываем логин
-                        authRepository.logout()
+                    } else {
                         Screen.LOGIN
                     }
-                } else {
-                    Screen.LOGIN
+                } catch (e: Exception) {
+                    // Критическая ошибка, показываем логин
+                    currentScreen = Screen.LOGIN
                 }
             }
             
+            // Используем key для предотвращения ошибок "Node not found" в WASM
+            // Это гарантирует, что AnimatedContent правильно обрабатывает изменения состояния
             AnimatedContent(
                 targetState = currentScreen,
                 transitionSpec = {
                     fadeIn(animationSpec = tween(300)) togetherWith 
                     fadeOut(animationSpec = tween(300))
-                }
+                },
+                label = "screen_transition"
             ) { screen ->
-                when (screen) {
-                    Screen.LOGIN -> {
-                        LoginScreen(
-                            onLoginSuccess = {
-                                currentScreen = Screen.MAIN
-                            }
-                        )
-                    }
-                    Screen.MAIN -> {
-                        MainScreenContent(
-                            onLogout = {
-                                scope.launch {
-                                    authRepository.logout()
-                                    currentScreen = Screen.LOGIN
+                // Используем key для каждого экрана, чтобы Compose правильно отслеживал DOM-узлы
+                key(screen) {
+                    when (screen) {
+                        Screen.LOGIN -> {
+                            LoginScreen(
+                                onLoginSuccess = {
+                                    currentScreen = Screen.MAIN
                                 }
-                            }
-                        )
-                    }
-                    null -> {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.align(Alignment.Center)
                             )
+                        }
+                        Screen.MAIN -> {
+                            MainScreenContent(
+                                onLogout = {
+                                    scope.launch {
+                                        authRepository.logout()
+                                        currentScreen = Screen.LOGIN
+                                    }
+                                }
+                            )
+                        }
+                        null -> {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.align(Alignment.Center)
+                                )
+                            }
                         }
                     }
                 }

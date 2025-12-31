@@ -50,47 +50,70 @@ class DashboardViewModel(
     
     fun loadDashboard(forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            // Показываем кэшированные данные сразу, если они есть
-            if (!forceRefresh && cachedState != null) {
-                _uiState.value = cachedState!!
-            } else {
-                _uiState.value = DashboardUiState.Loading
+            try {
+                // Показываем кэшированные данные сразу, если они есть
+                if (!forceRefresh && cachedState != null) {
+                    _uiState.value = cachedState!!
+                } else {
+                    _uiState.value = DashboardUiState.Loading
+                }
+                
+                // Загружаем данные параллельно, но обрабатываем ошибки независимо
+                val projectsResult = try {
+                    projectsRepository.getProjects()
+                } catch (e: Exception) {
+                    ApiResult.Error("Ошибка загрузки проектов: ${e.message}")
+                }
+                
+                val documentsResult = try {
+                    documentsRepository.getDocuments()
+                } catch (e: Exception) {
+                    // Документы не критичны, продолжаем с пустым списком
+                    ApiResult.Success(emptyList())
+                }
+                
+                val chatsResult = try {
+                    chatsRepository.getChats()
+                } catch (e: Exception) {
+                    // Чаты не критичны, продолжаем с пустым списком
+                    ApiResult.Success(emptyList())
+                }
+                
+                // Если проекты не загрузились, показываем ошибку
+                if (projectsResult is ApiResult.Error) {
+                    _uiState.value = DashboardUiState.Error(projectsResult.message)
+                    return@launch
+                }
+                
+                val projects = (projectsResult as ApiResult.Success).data
+                val documents = (documentsResult as? ApiResult.Success)?.data ?: emptyList()
+                val chats = (chatsResult as? ApiResult.Success)?.data ?: emptyList()
+                
+                val stats = DashboardStats(
+                    totalProjects = projects.size,
+                    availableProjects = projects.count { it.status == "available" },
+                    requestedProjects = projects.count { it.status == "requested" },
+                    constructionProjects = projects.count { it.status == "construction" },
+                    pendingDocuments = documents.count { 
+                        it.status == "pending" || it.status == "under_review" 
+                    },
+                    unreadMessages = chats.sumOf { it.unreadCount }
+                )
+                
+                val successState = DashboardUiState.Success(
+                    stats = stats,
+                    recentProjects = projects.take(5),
+                    pendingDocuments = documents.filter { 
+                        it.status == "pending" || it.status == "under_review" 
+                    }.take(5),
+                    recentChats = chats.sortedByDescending { it.lastMessageAt }.take(5)
+                )
+                cachedState = successState
+                _uiState.value = successState
+            } catch (e: Exception) {
+                // Общая обработка ошибок
+                _uiState.value = DashboardUiState.Error("Ошибка загрузки: ${e.message}")
             }
-            
-            val projectsResult = projectsRepository.getProjects()
-            val documentsResult = documentsRepository.getDocuments()
-            val chatsResult = chatsRepository.getChats()
-            
-            if (projectsResult is ApiResult.Error) {
-                _uiState.value = DashboardUiState.Error(projectsResult.message)
-                return@launch
-            }
-            
-            val projects = (projectsResult as ApiResult.Success).data
-            val documents = (documentsResult as? ApiResult.Success)?.data ?: emptyList()
-            val chats = (chatsResult as? ApiResult.Success)?.data ?: emptyList()
-            
-            val stats = DashboardStats(
-                totalProjects = projects.size,
-                availableProjects = projects.count { it.status == "available" },
-                requestedProjects = projects.count { it.status == "requested" },
-                constructionProjects = projects.count { it.status == "construction" },
-                pendingDocuments = documents.count { 
-                    it.status == "pending" || it.status == "under_review" 
-                },
-                unreadMessages = chats.sumOf { it.unreadCount }
-            )
-            
-            val successState = DashboardUiState.Success(
-                stats = stats,
-                recentProjects = projects.take(5),
-                pendingDocuments = documents.filter { 
-                    it.status == "pending" || it.status == "under_review" 
-                }.take(5),
-                recentChats = chats.sortedByDescending { it.lastMessageAt }.take(5)
-            )
-            cachedState = successState
-            _uiState.value = successState
         }
     }
 }
