@@ -11,7 +11,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.ErrorView
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.LoadingIndicator
@@ -177,5 +179,32 @@ private fun StatRow(
 private fun formatMoney(amount: Float): String {
     val formatted = amount.toInt().toString()
     return formatted.reversed().chunked(3).joinToString(" ").reversed()
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun StatCardPreview() {
+    AdminTheme(darkTheme = true) {
+        StatCard(
+            title = "Проекты",
+            icon = Icons.Default.Home
+        ) {
+            StatRow("Всего", "42")
+            StatRow("В работе", "15")
+            StatRow("Завершено", "27")
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun StatRowPreview() {
+    AdminTheme(darkTheme = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatRow("Всего проектов", "42")
+            StatRow("В строительстве", "15")
+            StatRow("Завершено", "27")
+        }
+    }
 }
 

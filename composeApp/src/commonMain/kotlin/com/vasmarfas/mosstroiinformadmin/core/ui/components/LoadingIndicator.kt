@@ -7,7 +7,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 
 @Composable
 fun LoadingIndicator(
@@ -31,6 +33,22 @@ fun LoadingIndicator(
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LoadingIndicatorPreview() {
+    AdminTheme(darkTheme = true) {
+        LoadingIndicator()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LoadingIndicatorWithTextPreview() {
+    AdminTheme(darkTheme = true) {
+        LoadingIndicator(text = "Загрузка данных...")
     }
 }
 

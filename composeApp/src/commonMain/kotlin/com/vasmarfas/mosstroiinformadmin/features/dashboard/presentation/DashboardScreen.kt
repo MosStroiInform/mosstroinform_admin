@@ -15,13 +15,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Chat
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Document
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Project
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 import com.vasmarfas.mosstroiinformadmin.core.ui.*
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.*
+import kotlinx.datetime.Clock
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -267,6 +270,52 @@ private fun ChatListItem(chat: Chat) {
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun StatCardPreview() {
+    AdminTheme(darkTheme = true) {
+        StatCard(
+            title = "Всего проектов",
+            value = "42",
+            icon = Icons.Default.Home,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DocumentListItemPreview() {
+    AdminTheme(darkTheme = true) {
+        DocumentListItem(
+            document = Document(
+                id = "1",
+                projectId = "proj1",
+                title = "Проектная документация",
+                description = "Описание документа",
+                status = "pending"
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ChatListItemPreview() {
+    AdminTheme(darkTheme = true) {
+        ChatListItem(
+            chat = Chat(
+                id = "1",
+                projectId = "proj1",
+                specialistName = "Иван Иванов",
+                lastMessage = "Привет, как дела?",
+                lastMessageAt = Clock.System.now(),
+                unreadCount = 3
+            )
+        )
     }
 }
 

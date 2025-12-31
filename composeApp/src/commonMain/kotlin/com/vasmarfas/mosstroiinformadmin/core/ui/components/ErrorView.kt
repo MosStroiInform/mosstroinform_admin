@@ -9,6 +9,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ErrorView(
@@ -52,6 +54,27 @@ fun ErrorView(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ErrorViewPreview() {
+    AdminTheme(darkTheme = true) {
+        ErrorView(
+            message = "Произошла ошибка при загрузке данных",
+            onRetry = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ErrorViewNoRetryPreview() {
+    AdminTheme(darkTheme = true) {
+        ErrorView(
+            message = "Произошла ошибка при загрузке данных"
+        )
     }
 }
 

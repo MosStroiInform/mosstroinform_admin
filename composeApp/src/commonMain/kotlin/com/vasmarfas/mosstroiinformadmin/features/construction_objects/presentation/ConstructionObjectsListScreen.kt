@@ -13,9 +13,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vasmarfas.mosstroiinformadmin.core.data.models.ConstructionObject
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.EmptyState
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.ErrorView
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.LoadingIndicator
@@ -212,5 +214,49 @@ private fun InfoChip(icon: androidx.compose.ui.graphics.vector.ImageVector, text
 
 private fun formatPrice(price: Int): String {
     return price.toString().reversed().chunked(3).joinToString(" ").reversed()
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ConstructionObjectCardPreview() {
+    AdminTheme(darkTheme = true) {
+        ConstructionObjectCard(
+            obj = ConstructionObject(
+                id = "1",
+                projectId = "proj1",
+                name = "Жилой комплекс 'Солнечный'",
+                address = "г. Москва, ул. Ленина, д. 1",
+                area = 150.0f,
+                floors = 5,
+                bedrooms = 3,
+                price = 50000000,
+                isCompleted = false,
+                allDocumentsSigned = false
+            ),
+            onClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ConstructionObjectCardCompletedPreview() {
+    AdminTheme(darkTheme = true) {
+        ConstructionObjectCard(
+            obj = ConstructionObject(
+                id = "2",
+                projectId = "proj2",
+                name = "Жилой комплекс 'Весенний'",
+                address = "г. Москва, ул. Пушкина, д. 10",
+                area = 200.0f,
+                floors = 7,
+                bedrooms = 4,
+                price = 75000000,
+                isCompleted = true,
+                allDocumentsSigned = true
+            ),
+            onClick = {}
+        )
+    }
 }
 

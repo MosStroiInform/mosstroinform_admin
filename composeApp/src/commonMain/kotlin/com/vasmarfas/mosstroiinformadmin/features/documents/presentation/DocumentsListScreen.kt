@@ -14,10 +14,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Document
 import com.vasmarfas.mosstroiinformadmin.core.data.models.DocumentStatus
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.EmptyState
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.ErrorView
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.LoadingIndicator
@@ -233,6 +235,54 @@ private fun formatDate(dateString: String): String {
         dateString.take(10)
     } catch (e: Exception) {
         dateString
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DocumentCardPreview() {
+    AdminTheme(darkTheme = true) {
+        DocumentCard(
+            document = Document(
+                id = "1",
+                projectId = "proj123",
+                title = "Проектная документация",
+                description = "Полный комплект проектной документации",
+                status = "pending",
+                submittedAt = "2024-01-15T10:00:00Z"
+            ),
+            onClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DocumentCardRejectedPreview() {
+    AdminTheme(darkTheme = true) {
+        DocumentCard(
+            document = Document(
+                id = "2",
+                projectId = "proj456",
+                title = "Разрешение на строительство",
+                description = "Документ требует доработки",
+                status = "rejected",
+                submittedAt = "2024-01-10T10:00:00Z",
+                rejectionReason = "Недостаточно информации"
+            ),
+            onClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun FilterChipsPreview() {
+    AdminTheme(darkTheme = true) {
+        FilterChips(
+            selectedFilter = DocumentStatus.PENDING,
+            onFilterSelected = {}
+        )
     }
 }
 

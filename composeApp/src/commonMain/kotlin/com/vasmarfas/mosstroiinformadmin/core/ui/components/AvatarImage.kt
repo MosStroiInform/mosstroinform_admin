@@ -1,8 +1,11 @@
 package com.vasmarfas.mosstroiinformadmin.core.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -20,9 +23,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 import io.ktor.client.HttpClient
 import org.koin.compose.koinInject
 
@@ -34,7 +40,7 @@ fun AvatarImage(
     size: Dp = 48.dp,
     httpClient: HttpClient = koinInject()
 ) {
-    var imageBitmap by remember(imageUrl) { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    var imageBitmap by remember(imageUrl) { mutableStateOf<ImageBitmap?>(null) }
     var isLoading by remember(imageUrl) { mutableStateOf(true) }
     
     LaunchedEffect(imageUrl) {
@@ -79,6 +85,33 @@ fun AvatarImage(
                     )
                 }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AvatarImagePreview() {
+    AdminTheme(darkTheme = true) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            AvatarImage(
+                imageUrl = null,
+                name = "Иван Иванов",
+                size = 48.dp
+            )
+            AvatarImage(
+                imageUrl = null,
+                name = "Петр Петров",
+                size = 64.dp
+            )
+            AvatarImage(
+                imageUrl = null,
+                name = "Мария Сидорова",
+                size = 80.dp
+            )
         }
     }
 }

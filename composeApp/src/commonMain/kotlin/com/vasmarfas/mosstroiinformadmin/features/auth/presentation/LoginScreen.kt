@@ -17,8 +17,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 import com.vasmarfas.mosstroiinformadmin.core.ui.AdaptivePadding
 import com.vasmarfas.mosstroiinformadmin.core.ui.isCompactScreen
 import mosstroiinformadmin.composeapp.generated.resources.Res
@@ -182,6 +184,14 @@ fun LoginScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LoginScreenPreview() {
+    AdminTheme(darkTheme = true) {
+        LoginScreen(onLoginSuccess = {})
     }
 }
 

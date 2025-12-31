@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import com.vasmarfas.mosstroiinformadmin.core.storage.initDataStore
 import com.vasmarfas.mosstroiinformadmin.core.utils.AndroidContextHolder
 

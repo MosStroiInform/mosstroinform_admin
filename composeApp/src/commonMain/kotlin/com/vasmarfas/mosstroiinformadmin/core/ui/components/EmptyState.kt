@@ -11,7 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 
 @Composable
 fun EmptyState(
@@ -52,6 +54,17 @@ fun EmptyState(
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EmptyStatePreview() {
+    AdminTheme(darkTheme = true) {
+        EmptyState(
+            message = "Нет данных",
+            subtitle = "Данные появятся позже"
+        )
     }
 }
 

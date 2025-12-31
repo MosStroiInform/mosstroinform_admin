@@ -12,12 +12,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Project
 import com.vasmarfas.mosstroiinformadmin.core.data.models.ProjectStage
 import com.vasmarfas.mosstroiinformadmin.core.data.models.ProjectStatus
 import com.vasmarfas.mosstroiinformadmin.core.data.models.StageStatus
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.ErrorView
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.LoadingIndicator
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.StatusBadge
@@ -489,5 +491,47 @@ private fun StartConstructionDialog(
 
 private fun formatPrice(price: Int): String {
     return price.toString().reversed().chunked(3).joinToString(" ").reversed()
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun StageCardPreview() {
+    AdminTheme(darkTheme = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            StageCard(
+                stage = ProjectStage("1", "Фундамент", "completed")
+            )
+            StageCard(
+                stage = ProjectStage("2", "Стены", "in_progress")
+            )
+            StageCard(
+                stage = ProjectStage("3", "Кровля", "pending")
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun InfoRowPreview() {
+    AdminTheme(darkTheme = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            InfoRow(
+                icon = Icons.Default.Home,
+                label = "Площадь",
+                value = "150 м²"
+            )
+            InfoRow(
+                icon = Icons.Default.Build,
+                label = "Этажи",
+                value = "5"
+            )
+            InfoRow(
+                icon = Icons.Default.Person,
+                label = "Спальни",
+                value = "3"
+            )
+        }
+    }
 }
 

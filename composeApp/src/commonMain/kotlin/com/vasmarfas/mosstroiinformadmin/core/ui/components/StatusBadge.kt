@@ -1,6 +1,8 @@
 package com.vasmarfas.mosstroiinformadmin.core.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -8,7 +10,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 
 @Composable
 fun StatusBadge(
@@ -36,4 +40,19 @@ fun StatusBadge(
             )
             .padding(horizontal = 8.dp, vertical = 4.dp)
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun StatusBadgePreview() {
+    AdminTheme(darkTheme = true) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatusBadge("Доступен")
+            StatusBadge("Запрошен")
+            StatusBadge("В строительстве")
+            StatusBadge("Завершен")
+            StatusBadge("Одобрен")
+            StatusBadge("Отклонен")
+        }
+    }
 }

@@ -5,17 +5,18 @@ import android.net.Uri
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.core.net.toUri
 
 actual suspend fun downloadAndOpenFile(
     url: String,
     fileName: String,
-    httpClient: HttpClient
+    httpClient: HttpClient,
 ): Result<Unit> {
     return try {
         val context = com.vasmarfas.mosstroiinformadmin.core.utils.getApplicationContext()
         
         // Просто открываем URL напрямую через браузер или внешнее приложение
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+        val intent = Intent(Intent.ACTION_VIEW, url.toUri()).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         

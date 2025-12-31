@@ -15,15 +15,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Chat
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.EmptyState
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.ErrorView
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.LoadingIndicator
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -163,5 +166,43 @@ private fun ChatListItem(
 private fun formatTime(instant: Instant): String {
     val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
     return "${localDateTime.hour.toString().padStart(2, '0')}:${localDateTime.minute.toString().padStart(2, '0')}"
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ChatListItemPreview() {
+    AdminTheme(darkTheme = true) {
+        ChatListItem(
+            chat = Chat(
+                id = "1",
+                projectId = "proj1",
+                specialistName = "Иван Иванов",
+                specialistAvatarUrl = null,
+                lastMessage = "Привет! Как дела с проектом?",
+                lastMessageAt = Clock.System.now(),
+                unreadCount = 5
+            ),
+            onClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ChatListItemNoUnreadPreview() {
+    AdminTheme(darkTheme = true) {
+        ChatListItem(
+            chat = Chat(
+                id = "2",
+                projectId = "proj2",
+                specialistName = "Мария Сидорова",
+                specialistAvatarUrl = null,
+                lastMessage = "Все готово, можно приступать",
+                lastMessageAt = Clock.System.now(),
+                unreadCount = 0
+            ),
+            onClick = {}
+        )
+    }
 }
 

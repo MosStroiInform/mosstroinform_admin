@@ -14,10 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Project
 import com.vasmarfas.mosstroiinformadmin.core.data.models.ProjectStatus
+import com.vasmarfas.mosstroiinformadmin.core.data.models.ProjectStage
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.EmptyState
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.ErrorView
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.LoadingIndicator
@@ -330,5 +333,66 @@ private fun ProjectDetail(
 
 private fun formatPrice(price: Int): String {
     return price.toString().reversed().chunked(3).joinToString(" ").reversed()
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProjectCardPreview() {
+    AdminTheme(darkTheme = true) {
+        ProjectCard(
+            project = Project(
+                id = "1",
+                name = "Жилой комплекс 'Солнечный'",
+                address = "г. Москва, ул. Ленина, д. 1",
+                description = "Современный жилой комплекс",
+                area = 150.0,
+                floors = 5,
+                price = 50000000,
+                bedrooms = 3,
+                status = "available",
+                stages = listOf(
+                    ProjectStage("1", "Фундамент", "completed"),
+                    ProjectStage("2", "Стены", "in_progress"),
+                    ProjectStage("3", "Кровля", "pending")
+                )
+            ),
+            onClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProjectCardRequestedPreview() {
+    AdminTheme(darkTheme = true) {
+        ProjectCard(
+            project = Project(
+                id = "2",
+                name = "Жилой комплекс 'Весенний'",
+                address = "г. Москва, ул. Пушкина, д. 10",
+                description = "Новый проект",
+                area = 200.0,
+                floors = 7,
+                price = 75000000,
+                bedrooms = 4,
+                status = "requested",
+                stages = emptyList()
+            ),
+            onClick = {},
+            onApproveRequest = {},
+            onRejectRequest = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun FilterChipsPreview() {
+    AdminTheme(darkTheme = true) {
+        FilterChips(
+            selectedFilter = ProjectStatus.AVAILABLE,
+            onFilterSelected = {}
+        )
+    }
 }
 
