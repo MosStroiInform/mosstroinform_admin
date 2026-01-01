@@ -26,10 +26,13 @@ class ChatWebSocketManager(private val client: HttpClient) {
                     if (frame is Frame.Text) {
                         val text = frame.readText()
                         try {
+                            println("WebSocket received: $text")
                             val message = Json.decodeFromString<Message>(text)
+                            println("WebSocket parsed message: id=${message.id}, text=${message.text}, isFromSpecialist=${message.isFromSpecialist}")
                             emit(message)
                         } catch (e: Exception) {
                             println("Failed to parse message: $text, error: ${e.message}")
+                            e.printStackTrace()
                         }
                     }
                 }

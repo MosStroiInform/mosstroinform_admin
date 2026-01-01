@@ -26,7 +26,7 @@ class ChatsApi(private val client: HttpClient) {
     suspend fun sendMessage(chatId: String, text: String): Message {
         return client.post(ApiConfig.Chats.messages(chatId)) {
             contentType(ContentType.Application.Json)
-            setBody(SendMessageRequest(text))
+            setBody(SendMessageRequest(text, fromSpecialist = true))
         }.body()
     }
     

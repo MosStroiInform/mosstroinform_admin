@@ -29,7 +29,7 @@ data class Chat(
 data class Message(
     val id: String,
     @SerialName("chat_id")
-    val chatId: String,
+    val chatId: String? = null, // Может отсутствовать в WebSocket сообщениях
     val text: String,
     @SerialName("sent_at")
     @Serializable(with = InstantSerializer::class)
@@ -37,7 +37,10 @@ data class Message(
     @SerialName("is_from_specialist")
     val isFromSpecialist: Boolean = false,
     @SerialName("is_read")
-    val isRead: Boolean = false
+    val isRead: Boolean = false,
+    @SerialName("created_at")
+    @Serializable(with = InstantSerializer::class)
+    val createdAt: Instant? = null // Дополнительное поле из WebSocket, игнорируем если нет
 )
 
 @Serializable

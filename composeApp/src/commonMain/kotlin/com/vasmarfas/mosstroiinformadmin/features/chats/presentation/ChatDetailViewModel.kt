@@ -97,24 +97,35 @@ class ChatDetailViewModel(
     private fun connectWebSocket() {
         viewModelScope.launch {
             val idToLoad = currentChatId ?: chatId
-            repository.connectToChat(idToLoad).collect { message ->
-                // Проверяем, нет ли уже такого сообщения (избегаем дубликатов)
-                val existingMessage = _state.value.messages.find { it.id == message.id }
-                if (existingMessage == null) {
-                    _state.value = _state.value.copy(
-                        messages = _state.value.messages + message,
-                        isConnected = true,
-                        isSending = false // Сбрасываем флаг отправки, когда получили сообщение
-                    )
-                } else {
-                    // Обновляем существующее сообщение (например, если изменился статус прочитанности)
-                    _state.value = _state.value.copy(
-                        messages = _state.value.messages.map { 
-                            if (it.id == message.id) message else it 
-                        },
-                        isConnected = true
-                    )
+            try {
+                repository.connectToChat(idToLoad).collect { message ->
+                    println("ChatDetailViewModel: Received message via WebSocket: id=${message.id}, text=${message.text}, isFromSpecialist=${message.isFromSpecialist}")
+                    // Проверяем, нет ли уже такого сообщения (избегаем дубликатов)
+                    val existingMessage = _state.value.messages.find { it.id == message.id }
+                    if (existingMessage == null) {
+                        println("ChatDetailViewModel: Adding new message to list")
+                        _state.value = _state.value.copy(
+                            messages = _state.value.messages + message,
+                            isConnected = true,
+                            isSending = false // Сбрасываем флаг отправки, когда получили сообщение
+                        )
+                    } else {
+                        println("ChatDetailViewModel: Updating existing message")
+                        // Обновляем существующее сообщение (например, если изменился статус прочитанности)
+                        _state.value = _state.value.copy(
+                            messages = _state.value.messages.map { 
+                                if (it.id == message.id) message else it 
+                            },
+                            isConnected = true
+                        )
+                    }
                 }
+            } catch (e: Exception) {
+                println("ChatDetailViewModel: WebSocket connection error: ${e.message}")
+                _state.value = _state.value.copy(
+                    isConnected = false,
+                    error = "Ошибка подключения к WebSocket: ${e.message}"
+                )
             }
         }
     }
