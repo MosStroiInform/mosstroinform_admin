@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Camera
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.ErrorView
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.LoadingIndicator
@@ -537,6 +539,45 @@ private fun DetailRow(label: String, value: String) {
         Text(
             text = value,
             style = MaterialTheme.typography.bodyLarge
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DetailRowPreview() {
+    AdminTheme(darkTheme = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            DetailRow(
+                label = "Название",
+                value = "Камера 1"
+            )
+            DetailRow(
+                label = "Описание",
+                value = "Основная камера на площадке"
+            )
+            DetailRow(
+                label = "Статус",
+                value = "Активна"
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CameraDetailScreenPreview() {
+    AdminTheme(darkTheme = true) {
+        CameraContent(
+            camera = Camera(
+                id = "1",
+                name = "Камера 1",
+                description = "Основная камера на строительной площадке",
+                streamUrl = "rtsp://example.com/stream",
+                isActive = true,
+                thumbnailUrl = null
+            ),
+            httpClient = org.koin.compose.koinInject()
         )
     }
 }

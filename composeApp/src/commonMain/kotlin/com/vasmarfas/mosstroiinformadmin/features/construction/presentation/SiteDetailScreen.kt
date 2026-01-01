@@ -33,6 +33,9 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
+import kotlinx.datetime.Clock
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -422,6 +425,107 @@ private fun InfoRow(
                 style = MaterialTheme.typography.bodyMedium
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SiteInfoCardPreview() {
+    AdminTheme(darkTheme = true) {
+        SiteInfoCard(
+            site = ConstructionSite(
+                id = "1",
+                projectId = "proj1",
+                projectName = "Жилой комплекс 'Солнечный'",
+                address = "г. Москва, ул. Ленина, д. 1",
+                startDate = Clock.System.now(),
+                expectedCompletionDate = Clock.System.now(),
+                progress = 0.75f,
+                cameras = emptyList()
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProgressCardPreview() {
+    AdminTheme(darkTheme = true) {
+        ProgressCard(progress = 0.75f)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CameraCardPreview() {
+    AdminTheme(darkTheme = true) {
+        CameraCard(
+            camera = Camera(
+                id = "1",
+                name = "Камера 1",
+                description = "Основная камера",
+                streamUrl = "rtsp://example.com/stream",
+                isActive = true,
+                thumbnailUrl = null
+            ),
+            onClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun InfoRowPreview() {
+    AdminTheme(darkTheme = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            InfoRow(
+                icon = Icons.Default.LocationOn,
+                label = "Адрес",
+                value = "г. Москва, ул. Ленина, д. 1"
+            )
+            InfoRow(
+                icon = Icons.Default.CalendarToday,
+                label = "Начало работ",
+                value = "15.01.2024"
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SiteDetailScreenPreview() {
+    AdminTheme(darkTheme = true) {
+        SiteContent(
+            site = ConstructionSite(
+                id = "1",
+                projectId = "proj1",
+                projectName = "Жилой комплекс 'Солнечный'",
+                address = "г. Москва, ул. Ленина, д. 1",
+                startDate = Clock.System.now(),
+                expectedCompletionDate = Clock.System.now(),
+                progress = 0.75f,
+                cameras = listOf(
+                    Camera(
+                        id = "1",
+                        name = "Камера 1",
+                        description = "Основная камера",
+                        streamUrl = "rtsp://example.com/stream1",
+                        isActive = true,
+                        thumbnailUrl = null
+                    ),
+                    Camera(
+                        id = "2",
+                        name = "Камера 2",
+                        description = "Входная камера",
+                        streamUrl = "rtsp://example.com/stream2",
+                        isActive = true,
+                        thumbnailUrl = null
+                    )
+                )
+            ),
+            onCameraClick = {}
+        )
     }
 }
 

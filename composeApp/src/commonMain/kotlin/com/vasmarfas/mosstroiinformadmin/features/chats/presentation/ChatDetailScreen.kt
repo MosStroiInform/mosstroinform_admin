@@ -15,6 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
+import kotlinx.datetime.Clock
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Message
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.ErrorView
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.LoadingIndicator
@@ -248,5 +251,112 @@ private fun MessageBubble(message: Message) {
 private fun formatMessageTime(instant: Instant): String {
     val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
     return "${localDateTime.hour.toString().padStart(2, '0')}:${localDateTime.minute.toString().padStart(2, '0')}"
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MessageBubblePreview() {
+    AdminTheme(darkTheme = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            MessageBubble(
+                message = Message(
+                    id = "1",
+                    chatId = "chat1",
+                    text = "Привет! Как дела с проектом?",
+                    sentAt = Clock.System.now(),
+                    isFromSpecialist = true,
+                    isRead = true
+                )
+            )
+            MessageBubble(
+                message = Message(
+                    id = "2",
+                    chatId = "chat1",
+                    text = "Все отлично, работаем по плану",
+                    sentAt = Clock.System.now(),
+                    isFromSpecialist = false,
+                    isRead = false
+                )
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ChatDetailScreenPreview() {
+    AdminTheme(darkTheme = true) {
+        ChatDetailScreenContentPreview()
+    }
+}
+
+@Composable
+private fun ChatDetailScreenContentPreview() {
+    val mockMessages = listOf(
+        Message(
+            id = "1",
+            chatId = "chat1",
+            text = "Привет! Как дела с проектом?",
+            sentAt = Clock.System.now(),
+            isFromSpecialist = true,
+            isRead = true
+        ),
+        Message(
+            id = "2",
+            chatId = "chat1",
+            text = "Все отлично, работаем по плану",
+            sentAt = Clock.System.now(),
+            isFromSpecialist = false,
+            isRead = false
+        ),
+        Message(
+            id = "3",
+            chatId = "chat1",
+            text = "Отлично! Жду обновлений",
+            sentAt = Clock.System.now(),
+            isFromSpecialist = true,
+            isRead = true
+        )
+    )
+    
+    Column(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(
+                items = mockMessages,
+                key = { it.id }
+            ) { message ->
+                MessageBubble(message = message)
+            }
+        }
+        
+        Surface(
+            shadowElevation = 8.dp,
+            tonalElevation = 0.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = "",
+                    onValueChange = {},
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Введите сообщение...") }
+                )
+                IconButton(onClick = {}) {
+                    Icon(Icons.AutoMirrored.Filled.Send, "Отправить")
+                }
+            }
+        }
+    }
 }
 

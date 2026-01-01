@@ -24,6 +24,7 @@ import com.vasmarfas.mosstroiinformadmin.core.data.models.Project
 import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 import com.vasmarfas.mosstroiinformadmin.core.ui.*
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.*
+import com.vasmarfas.mosstroiinformadmin.features.dashboard.presentation.DashboardStats
 import kotlinx.datetime.Clock
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -314,6 +315,81 @@ private fun ChatListItemPreview() {
                 lastMessage = "Привет, как дела?",
                 lastMessageAt = Clock.System.now(),
                 unreadCount = 3
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DashboardScreenPreview() {
+    AdminTheme(darkTheme = true) {
+        DashboardContent(
+            stats = DashboardStats(
+                totalProjects = 42,
+                availableProjects = 15,
+                constructionProjects = 12,
+                pendingDocuments = 8,
+                unreadMessages = 5,
+                requestedProjects = 7
+            ),
+            recentProjects = listOf(
+                Project(
+                    id = "1",
+                    name = "Жилой комплекс 'Солнечный'",
+                    address = "г. Москва, ул. Ленина, д. 1",
+                    description = "Современный жилой комплекс",
+                    area = 150.0,
+                    floors = 5,
+                    price = 50000000,
+                    bedrooms = 3,
+                    status = "available"
+                ),
+                Project(
+                    id = "2",
+                    name = "Жилой комплекс 'Весенний'",
+                    address = "г. Москва, ул. Пушкина, д. 10",
+                    description = "Новый проект",
+                    area = 200.0,
+                    floors = 7,
+                    price = 75000000,
+                    bedrooms = 4,
+                    status = "construction"
+                )
+            ),
+            pendingDocuments = listOf(
+                Document(
+                    id = "1",
+                    projectId = "proj1",
+                    title = "Проектная документация",
+                    description = "Требует рассмотрения",
+                    status = "pending"
+                ),
+                Document(
+                    id = "2",
+                    projectId = "proj2",
+                    title = "Разрешение на строительство",
+                    description = "На согласовании",
+                    status = "pending"
+                )
+            ),
+            recentChats = listOf(
+                Chat(
+                    id = "1",
+                    projectId = "proj1",
+                    specialistName = "Иван Иванов",
+                    lastMessage = "Привет, как дела?",
+                    lastMessageAt = Clock.System.now(),
+                    unreadCount = 3
+                ),
+                Chat(
+                    id = "2",
+                    projectId = "proj2",
+                    specialistName = "Мария Сидорова",
+                    lastMessage = "Все готово",
+                    lastMessageAt = Clock.System.now(),
+                    unreadCount = 0
+                )
             )
         )
     }

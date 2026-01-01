@@ -396,3 +396,84 @@ private fun FilterChipsPreview() {
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun ProjectsListScreenPreview() {
+    AdminTheme(darkTheme = true) {
+        ProjectsListScreenContentPreview()
+    }
+}
+
+@Composable
+private fun ProjectsListScreenContentPreview() {
+    val mockProjects = listOf(
+        Project(
+            id = "1",
+            name = "Жилой комплекс 'Солнечный'",
+            address = "г. Москва, ул. Ленина, д. 1",
+            description = "Современный жилой комплекс",
+            area = 150.0,
+            floors = 5,
+            price = 50000000,
+            bedrooms = 3,
+            status = "available",
+            stages = listOf(
+                ProjectStage("1", "Фундамент", "completed"),
+                ProjectStage("2", "Стены", "in_progress"),
+                ProjectStage("3", "Кровля", "pending")
+            )
+        ),
+        Project(
+            id = "2",
+            name = "Жилой комплекс 'Весенний'",
+            address = "г. Москва, ул. Пушкина, д. 10",
+            description = "Новый проект",
+            area = 200.0,
+            floors = 7,
+            price = 75000000,
+            bedrooms = 4,
+            status = "requested",
+            stages = emptyList()
+        ),
+        Project(
+            id = "3",
+            name = "Жилой комплекс 'Летний'",
+            address = "г. Москва, ул. Гагарина, д. 5",
+            description = "Элитный комплекс",
+            area = 180.0,
+            floors = 6,
+            price = 90000000,
+            bedrooms = 5,
+            status = "construction",
+            stages = listOf(
+                ProjectStage("1", "Фундамент", "completed"),
+                ProjectStage("2", "Стены", "completed"),
+                ProjectStage("3", "Кровля", "in_progress")
+            )
+        )
+    )
+    
+    Column(modifier = Modifier.fillMaxSize()) {
+        FilterChips(
+            selectedFilter = null,
+            onFilterSelected = {}
+        )
+        
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(
+                items = mockProjects,
+                key = { it.id }
+            ) { project ->
+                ProjectCard(
+                    project = project,
+                    onClick = {}
+                )
+            }
+        }
+    }
+}
+

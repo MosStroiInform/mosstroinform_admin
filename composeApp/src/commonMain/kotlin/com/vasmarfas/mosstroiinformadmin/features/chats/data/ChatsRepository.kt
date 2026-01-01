@@ -65,7 +65,7 @@ class ChatsRepository(
     }
     
     suspend fun sendMessageViaWebSocket(text: String) {
-        webSocketManager.sendMessage(text, fromSpecialist = false)
+        webSocketManager.sendMessage(text, fromSpecialist = true)
     }
     
     suspend fun markAsReadViaWebSocket(messageId: String) {

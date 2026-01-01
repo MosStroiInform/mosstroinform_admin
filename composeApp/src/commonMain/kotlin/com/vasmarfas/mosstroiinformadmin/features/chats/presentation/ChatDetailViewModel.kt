@@ -98,10 +98,23 @@ class ChatDetailViewModel(
         viewModelScope.launch {
             val idToLoad = currentChatId ?: chatId
             repository.connectToChat(idToLoad).collect { message ->
-                _state.value = _state.value.copy(
-                    messages = _state.value.messages + message,
-                    isConnected = true
-                )
+                // Проверяем, нет ли уже такого сообщения (избегаем дубликатов)
+                val existingMessage = _state.value.messages.find { it.id == message.id }
+                if (existingMessage == null) {
+                    _state.value = _state.value.copy(
+                        messages = _state.value.messages + message,
+                        isConnected = true,
+                        isSending = false // Сбрасываем флаг отправки, когда получили сообщение
+                    )
+                } else {
+                    // Обновляем существующее сообщение (например, если изменился статус прочитанности)
+                    _state.value = _state.value.copy(
+                        messages = _state.value.messages.map { 
+                            if (it.id == message.id) message else it 
+                        },
+                        isConnected = true
+                    )
+                }
             }
         }
     }
@@ -110,24 +123,45 @@ class ChatDetailViewModel(
         if (text.isBlank()) return
         
         viewModelScope.launch {
-            val idToUse = currentChatId ?: chatId
             _state.value = _state.value.copy(isSending = true)
             
-            // Используем REST API для отправки
-            when (val result = repository.sendMessage(idToUse, text)) {
-                is ApiResult.Success -> {
-                    _state.value = _state.value.copy(
-                        messages = _state.value.messages + result.data,
-                        isSending = false
-                    )
+            try {
+                // Проверяем, подключен ли WebSocket
+                if (!_state.value.isConnected) {
+                    // Если WebSocket не подключен, используем REST API как fallback
+                    val idToUse = currentChatId ?: chatId
+                    when (val result = repository.sendMessage(idToUse, text)) {
+                        is ApiResult.Success -> {
+                            _state.value = _state.value.copy(
+                                messages = _state.value.messages + result.data,
+                                isSending = false
+                            )
+                        }
+                        is ApiResult.Error -> {
+                            _state.value = _state.value.copy(
+                                error = result.message,
+                                isSending = false
+                            )
+                        }
+                        is ApiResult.Loading -> {}
+                    }
+                } else {
+                    // Используем WebSocket для отправки - это обеспечит реактивность
+                    // Сообщение будет автоматически добавлено в список через WebSocket поток
+                    repository.sendMessageViaWebSocket(text)
+                    
+                    // Сбрасываем флаг отправки через небольшую задержку
+                    // Если сообщение не придет через WebSocket, флаг все равно сбросится
+                    kotlinx.coroutines.delay(1000)
+                    if (_state.value.isSending) {
+                        _state.value = _state.value.copy(isSending = false)
+                    }
                 }
-                is ApiResult.Error -> {
-                    _state.value = _state.value.copy(
-                        error = result.message,
-                        isSending = false
-                    )
-                }
-                is ApiResult.Loading -> {}
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    error = e.message ?: "Ошибка отправки сообщения",
+                    isSending = false
+                )
             }
         }
     }

@@ -41,7 +41,7 @@ class ChatWebSocketManager(private val client: HttpClient) {
         }
     }
     
-    suspend fun sendMessage(text: String, fromSpecialist: Boolean = false) {
+    suspend fun sendMessage(text: String, fromSpecialist: Boolean = true) {
         val message = WebSocketMessage(
             type = "CREATE",
             text = text,

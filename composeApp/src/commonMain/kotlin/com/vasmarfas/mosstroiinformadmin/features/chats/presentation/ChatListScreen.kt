@@ -206,3 +206,60 @@ private fun ChatListItemNoUnreadPreview() {
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun ChatListScreenPreview() {
+    AdminTheme(darkTheme = true) {
+        ChatListScreenContentPreview()
+    }
+}
+
+@Composable
+private fun ChatListScreenContentPreview() {
+    val mockChats = listOf(
+        Chat(
+            id = "1",
+            projectId = "proj1",
+            specialistName = "Иван Иванов",
+            specialistAvatarUrl = null,
+            lastMessage = "Привет! Как дела с проектом?",
+            lastMessageAt = Clock.System.now(),
+            unreadCount = 5
+        ),
+        Chat(
+            id = "2",
+            projectId = "proj2",
+            specialistName = "Мария Сидорова",
+            specialistAvatarUrl = null,
+            lastMessage = "Все готово, можно приступать",
+            lastMessageAt = Clock.System.now(),
+            unreadCount = 0
+        ),
+        Chat(
+            id = "3",
+            projectId = "proj3",
+            specialistName = "Петр Петров",
+            specialistAvatarUrl = null,
+            lastMessage = "Нужна консультация по документам",
+            lastMessageAt = Clock.System.now(),
+            unreadCount = 2
+        )
+    )
+    
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(
+            items = mockChats,
+            key = { it.id }
+        ) { chat ->
+            ChatListItem(
+                chat = chat,
+                onClick = {}
+            )
+        }
+    }
+}
+

@@ -191,7 +191,120 @@ fun LoginScreen(
 @Composable
 private fun LoginScreenPreview() {
     AdminTheme(darkTheme = true) {
-        LoginScreen(onLoginSuccess = {})
+        LoginScreenContentPreview()
+    }
+}
+
+@Composable
+private fun LoginScreenContentPreview() {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    val isCompact = isCompactScreen()
+    
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(AdaptivePadding.medium),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier
+                .widthIn(max = if (isCompact) 600.dp else 500.dp)
+                .fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(AdaptivePadding.large),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(AdaptivePadding.medium)
+            ) {
+                // Логотип
+                Image(
+                    painter = painterResource(Res.drawable.compose_multiplatform),
+                    contentDescription = "Логотип",
+                    modifier = Modifier.size(80.dp)
+                )
+                
+                // Заголовок
+                Text(
+                    text = "МосСтройИнформ",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                Text(
+                    text = "Панель администратора",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Email поле
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Email, contentDescription = null)
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                // Пароль поле
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Пароль") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Lock, contentDescription = null)
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) 
+                                    Icons.Default.Visibility 
+                                else 
+                                    Icons.Default.VisibilityOff,
+                                contentDescription = if (passwordVisible) 
+                                    "Скрыть пароль" 
+                                else 
+                                    "Показать пароль"
+                            )
+                        }
+                    },
+                    visualTransformation = if (passwordVisible) 
+                        VisualTransformation.None 
+                    else 
+                        PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Кнопка входа
+                Button(
+                    onClick = { },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                ) {
+                    Text("Войти", style = MaterialTheme.typography.titleMedium)
+                }
+            }
+        }
     }
 }
 

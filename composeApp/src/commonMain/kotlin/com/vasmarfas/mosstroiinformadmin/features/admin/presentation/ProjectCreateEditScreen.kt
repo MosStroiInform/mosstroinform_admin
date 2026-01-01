@@ -11,6 +11,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -271,6 +273,30 @@ fun ProjectCreateEditScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProjectCreateEditScreenPreview() {
+    AdminTheme(darkTheme = true) {
+        ProjectCreateEditScreen(
+            projectId = null,
+            onBackClick = {},
+            onSuccess = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProjectCreateEditScreenEditPreview() {
+    AdminTheme(darkTheme = true) {
+        ProjectCreateEditScreen(
+            projectId = "1",
+            onBackClick = {},
+            onSuccess = {}
+        )
     }
 }
 

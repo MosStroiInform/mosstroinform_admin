@@ -13,6 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
+import kotlinx.datetime.Clock
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import com.vasmarfas.mosstroiinformadmin.core.data.models.CompletionStatus
 import com.vasmarfas.mosstroiinformadmin.core.data.models.FinalDocument
 import com.vasmarfas.mosstroiinformadmin.core.data.models.FinalDocumentStatus
@@ -505,5 +508,84 @@ private fun RejectDialog(
             }
         }
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun StatusCardPreview() {
+    AdminTheme(darkTheme = true) {
+        StatusCard(
+            completionStatus = CompletionStatus(
+                projectId = "1",
+                isCompleted = true,
+                completionDate = Clock.System.now(),
+                progress = 1.0f,
+                documents = emptyList()
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProgressCardPreview() {
+    AdminTheme(darkTheme = true) {
+        ProgressCard(progress = 0.75f)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun FinalDocumentCardPreview() {
+    AdminTheme(darkTheme = true) {
+        FinalDocumentCard(
+            document = FinalDocument(
+                id = "1",
+                title = "Акт приёмки",
+                description = "Акт приёмки выполненных работ",
+                status = "pending",
+                submittedAt = Clock.System.now()
+            ),
+            isActionInProgress = false,
+            onSign = {},
+            onReject = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CompletionScreenPreview() {
+    AdminTheme(darkTheme = true) {
+        CompletionContent(
+            completionStatus = CompletionStatus(
+                projectId = "1",
+                isCompleted = false,
+                completionDate = null,
+                progress = 0.75f,
+                allDocumentsSigned = false,
+                documents = listOf(
+                    FinalDocument(
+                        id = "1",
+                        title = "Акт приёмки",
+                        description = "Акт приёмки выполненных работ",
+                        status = "pending",
+                        submittedAt = Clock.System.now()
+                    ),
+                    FinalDocument(
+                        id = "2",
+                        title = "Акт выполненных работ",
+                        description = "Акт по первому этапу",
+                        status = "signed",
+                        submittedAt = Clock.System.now(),
+                        signedAt = Clock.System.now()
+                    )
+                )
+            ),
+            actionInProgress = null,
+            onSignDocument = {},
+            onRejectDocument = {}
+        )
+    }
 }
 

@@ -286,3 +286,65 @@ private fun FilterChipsPreview() {
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun DocumentsListScreenPreview() {
+    AdminTheme(darkTheme = true) {
+        DocumentsListScreenContentPreview()
+    }
+}
+
+@Composable
+private fun DocumentsListScreenContentPreview() {
+    val mockDocuments = listOf(
+        Document(
+            id = "1",
+            projectId = "proj123",
+            title = "Проектная документация",
+            description = "Полный комплект проектной документации",
+            status = "pending",
+            submittedAt = "2024-01-15T10:00:00Z"
+        ),
+        Document(
+            id = "2",
+            projectId = "proj456",
+            title = "Разрешение на строительство",
+            description = "Документ требует доработки",
+            status = "rejected",
+            submittedAt = "2024-01-10T10:00:00Z",
+            rejectionReason = "Недостаточно информации"
+        ),
+        Document(
+            id = "3",
+            projectId = "proj789",
+            title = "Акт выполненных работ",
+            description = "Акт по первому этапу",
+            status = "approved",
+            submittedAt = "2024-01-20T10:00:00Z"
+        )
+    )
+    
+    Column(modifier = Modifier.fillMaxSize()) {
+        FilterChips(
+            selectedFilter = null,
+            onFilterSelected = {}
+        )
+        
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(
+                items = mockDocuments,
+                key = { it.id }
+            ) { document ->
+                DocumentCard(
+                    document = document,
+                    onClick = {}
+                )
+            }
+        }
+    }
+}
+

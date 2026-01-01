@@ -260,3 +260,57 @@ private fun ConstructionObjectCardCompletedPreview() {
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun ConstructionObjectsListScreenPreview() {
+    AdminTheme(darkTheme = true) {
+        ConstructionObjectsListScreenContentPreview()
+    }
+}
+
+@Composable
+private fun ConstructionObjectsListScreenContentPreview() {
+    val mockObjects = listOf(
+        ConstructionObject(
+            id = "1",
+            projectId = "proj1",
+            name = "Жилой комплекс 'Солнечный'",
+            address = "г. Москва, ул. Ленина, д. 1",
+            area = 150.0f,
+            floors = 5,
+            bedrooms = 3,
+            price = 50000000,
+            isCompleted = false,
+            allDocumentsSigned = false
+        ),
+        ConstructionObject(
+            id = "2",
+            projectId = "proj2",
+            name = "Жилой комплекс 'Весенний'",
+            address = "г. Москва, ул. Пушкина, д. 10",
+            area = 200.0f,
+            floors = 7,
+            bedrooms = 4,
+            price = 75000000,
+            isCompleted = true,
+            allDocumentsSigned = true
+        )
+    )
+    
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(
+            items = mockObjects,
+            key = { it.id }
+        ) { obj ->
+            ConstructionObjectCard(
+                obj = obj,
+                onClick = {}
+            )
+        }
+    }
+}
+

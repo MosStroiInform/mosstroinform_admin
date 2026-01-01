@@ -14,7 +14,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import com.vasmarfas.mosstroiinformadmin.core.data.models.Document
 import com.vasmarfas.mosstroiinformadmin.core.data.models.DocumentStatus
+import com.vasmarfas.mosstroiinformadmin.core.ui.components.StatusBadge
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.LoadingIndicator
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.StatusBadge
 import io.ktor.client.HttpClient
@@ -396,5 +400,117 @@ private fun RejectDialog(
             }
         }
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DetailRowPreview() {
+    AdminTheme(darkTheme = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            DetailRow(
+                label = "Название",
+                value = "Проектная документация"
+            )
+            DetailRow(
+                label = "Статус",
+                value = "Ожидает"
+            )
+            DetailRow(
+                label = "Дата подачи",
+                value = "15.01.2024"
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DocumentDetailDialogPreview() {
+    AdminTheme(darkTheme = true) {
+        DocumentDetailDialogContentPreview()
+    }
+}
+
+@Composable
+private fun DocumentDetailDialogContentPreview() {
+    val mockDocument = Document(
+        id = "1",
+        projectId = "proj123",
+        title = "Проектная документация",
+        description = "Полный комплект проектной документации для жилого комплекса",
+        fileUrl = "https://example.com/document.pdf",
+        status = "pending",
+        submittedAt = "2024-01-15T10:00:00Z"
+    )
+    
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        StatusBadge(status = DocumentStatus.fromValue(mockDocument.status).displayName)
+        
+        Text(
+            text = mockDocument.title,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
+        
+        HorizontalDivider()
+        
+        DetailRow(
+            label = "Описание",
+            value = mockDocument.description ?: ""
+        )
+        
+        DetailRow(
+            label = "ID проекта",
+            value = mockDocument.projectId
+        )
+        
+        DetailRow(
+            label = "Дата подачи",
+            value = mockDocument.submittedAt ?: ""
+        )
+        
+        HorizontalDivider()
+        
+        Button(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Download, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Скачать документ")
+        }
+        
+        HorizontalDivider()
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = {},
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Icon(Icons.Default.Close, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Отклонить")
+            }
+            Button(
+                onClick = {},
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Default.Check, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Одобрить")
+            }
+        }
+    }
 }
 

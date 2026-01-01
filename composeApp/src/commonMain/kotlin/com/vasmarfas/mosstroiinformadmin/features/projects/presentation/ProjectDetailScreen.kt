@@ -535,3 +535,143 @@ private fun InfoRowPreview() {
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun ProjectInfoCardPreview() {
+    AdminTheme(darkTheme = true) {
+        ProjectInfoCard(
+            project = Project(
+                id = "1",
+                name = "Жилой комплекс 'Солнечный'",
+                address = "г. Москва, ул. Ленина, д. 1",
+                description = "Современный жилой комплекс с развитой инфраструктурой",
+                area = 150.0,
+                floors = 5,
+                price = 50000000,
+                bedrooms = 3,
+                bathrooms = 2,
+                status = "available"
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProjectActionsCardPreview() {
+    AdminTheme(darkTheme = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            ProjectActionsCard(
+                project = Project(
+                    id = "1",
+                    name = "Проект",
+                    address = "Адрес",
+                    area = 100.0,
+                    floors = 3,
+                    price = 30000000,
+                    status = "available"
+                ),
+                isRequestingConstruction = false,
+                isStartingConstruction = false,
+                onRequestConstruction = {},
+                onStartConstruction = {},
+                onViewConstructionSite = {},
+                onViewCompletion = {}
+            )
+            ProjectActionsCard(
+                project = Project(
+                    id = "2",
+                    name = "Проект",
+                    address = "Адрес",
+                    area = 100.0,
+                    floors = 3,
+                    price = 30000000,
+                    status = "requested"
+                ),
+                isRequestingConstruction = false,
+                isStartingConstruction = false,
+                onRequestConstruction = {},
+                onStartConstruction = {},
+                onViewConstructionSite = {},
+                onViewCompletion = {}
+            )
+            ProjectActionsCard(
+                project = Project(
+                    id = "3",
+                    name = "Проект",
+                    address = "Адрес",
+                    area = 100.0,
+                    floors = 3,
+                    price = 30000000,
+                    status = "construction"
+                ),
+                isRequestingConstruction = false,
+                isStartingConstruction = false,
+                onRequestConstruction = {},
+                onStartConstruction = {},
+                onViewConstructionSite = {},
+                onViewCompletion = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProjectDetailScreenPreview() {
+    AdminTheme(darkTheme = true) {
+        ProjectDetailScreenContentPreview()
+    }
+}
+
+@Composable
+private fun ProjectDetailScreenContentPreview() {
+    val mockProject = Project(
+        id = "1",
+        name = "Жилой комплекс 'Солнечный'",
+        address = "г. Москва, ул. Ленина, д. 1",
+        description = "Современный жилой комплекс с развитой инфраструктурой",
+        area = 150.0,
+        floors = 5,
+        price = 50000000,
+        bedrooms = 3,
+        bathrooms = 2,
+        status = "available",
+        stages = listOf(
+            ProjectStage("1", "Фундамент", "completed"),
+            ProjectStage("2", "Стены", "in_progress"),
+            ProjectStage("3", "Кровля", "pending")
+        )
+    )
+    
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            ProjectInfoCard(project = mockProject)
+        }
+        item {
+            ProjectActionsCard(
+                project = mockProject,
+                isRequestingConstruction = false,
+                isStartingConstruction = false,
+                onRequestConstruction = {},
+                onStartConstruction = {},
+                onViewConstructionSite = {},
+                onViewCompletion = {}
+            )
+        }
+        item {
+            Text(
+                text = "Этапы проекта",
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+        items(mockProject.stages) { stage ->
+            StageCard(stage = stage)
+        }
+    }
+}
+

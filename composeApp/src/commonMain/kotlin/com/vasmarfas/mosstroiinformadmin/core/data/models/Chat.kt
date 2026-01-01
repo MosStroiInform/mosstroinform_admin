@@ -42,7 +42,9 @@ data class Message(
 
 @Serializable
 data class SendMessageRequest(
-    val text: String
+    val text: String,
+    @SerialName("from_specialist")
+    val fromSpecialist: Boolean = true
 )
 
 @Serializable

@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import com.vasmarfas.mosstroiinformadmin.core.data.models.ConstructionObject
 import com.vasmarfas.mosstroiinformadmin.core.data.models.ConstructionObjectStage
 import com.vasmarfas.mosstroiinformadmin.core.data.models.StageStatus
@@ -582,5 +584,102 @@ private fun DocumentsStatusDialog(
 
 private fun formatPrice(price: Int): String {
     return price.toString().reversed().chunked(3).joinToString(" ").reversed()
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ObjectInfoCardPreview() {
+    AdminTheme(darkTheme = true) {
+        ObjectInfoCard(
+            obj = ConstructionObject(
+                id = "1",
+                projectId = "proj1",
+                name = "Жилой комплекс 'Солнечный'",
+                address = "г. Москва, ул. Ленина, д. 1",
+                description = "Современный жилой комплекс",
+                area = 150.0f,
+                floors = 5,
+                bedrooms = 3,
+                bathrooms = 2,
+                price = 50000000,
+                isCompleted = false,
+                allDocumentsSigned = true
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun StageCardPreview() {
+    AdminTheme(darkTheme = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            StageCard(
+                stage = ConstructionObjectStage("1", "Фундамент", "completed")
+            )
+            StageCard(
+                stage = ConstructionObjectStage("2", "Стены", "in_progress")
+            )
+            StageCard(
+                stage = ConstructionObjectStage("3", "Кровля", "pending")
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun InfoRowPreview() {
+    AdminTheme(darkTheme = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            InfoRow(
+                icon = Icons.Default.Home,
+                label = "Площадь",
+                value = "150 м²"
+            )
+            InfoRow(
+                icon = Icons.Default.Build,
+                label = "Этажей",
+                value = "5"
+            )
+            InfoRow(
+                icon = Icons.Default.Person,
+                label = "Спален",
+                value = "3"
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ConstructionObjectDetailScreenPreview() {
+    AdminTheme(darkTheme = true) {
+        ObjectContent(
+            obj = ConstructionObject(
+                id = "1",
+                projectId = "proj1",
+                name = "Жилой комплекс 'Солнечный'",
+                address = "г. Москва, ул. Ленина, д. 1",
+                description = "Современный жилой комплекс",
+                area = 150.0f,
+                floors = 5,
+                bedrooms = 3,
+                bathrooms = 2,
+                price = 50000000,
+                isCompleted = false,
+                allDocumentsSigned = true,
+                stages = listOf(
+                    ConstructionObjectStage("1", "Фундамент", "completed"),
+                    ConstructionObjectStage("2", "Стены", "in_progress"),
+                    ConstructionObjectStage("3", "Кровля", "pending")
+                )
+            ),
+            isCompleting = false,
+            isUpdatingDocumentsStatus = false,
+            onComplete = {},
+            onUpdateDocumentsStatus = {}
+        )
+    }
 }
 
