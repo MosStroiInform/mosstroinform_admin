@@ -45,16 +45,23 @@ class ChatWebSocketManager(private val client: HttpClient) {
     }
     
     suspend fun sendMessage(text: String, fromSpecialist: Boolean = true) {
+        if (session == null) {
+            println("WebSocket session is null, cannot send message")
+            return
+        }
+        
         val message = WebSocketMessage(
             type = "CREATE",
             text = text,
-            fromSpecialist = fromSpecialist
+            fromSpecialist = fromSpecialist // Явно указываем fromSpecialist=true для админки
         )
         
         try {
             session?.send(Frame.Text(Json.encodeToString(message)))
+            println("Message sent via WebSocket: text=$text, fromSpecialist=$fromSpecialist")
         } catch (e: Exception) {
             println("Failed to send message: ${e.message}")
+            throw e
         }
     }
     

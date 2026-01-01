@@ -98,19 +98,21 @@ class ChatDetailViewModel(
         viewModelScope.launch {
             val idToLoad = currentChatId ?: chatId
             try {
+                // Устанавливаем флаг подключения сразу при начале подключения
+                _state.value = _state.value.copy(isConnected = true)
+                
                 repository.connectToChat(idToLoad).collect { message ->
-                    println("ChatDetailViewModel: Received message via WebSocket: id=${message.id}, text=${message.text}, isFromSpecialist=${message.isFromSpecialist}")
-                    // Проверяем, нет ли уже такого сообщения (избегаем дубликатов)
-                    val existingMessage = _state.value.messages.find { it.id == message.id }
-                    if (existingMessage == null) {
-                        println("ChatDetailViewModel: Adding new message to list")
+                    // Оптимизированная проверка на дубликаты - используем Set для быстрого поиска
+                    val messageIds = _state.value.messages.map { it.id }.toSet()
+                    
+                    if (message.id !in messageIds) {
+                        // Добавляем новое сообщение в конец списка
                         _state.value = _state.value.copy(
                             messages = _state.value.messages + message,
                             isConnected = true,
-                            isSending = false // Сбрасываем флаг отправки, когда получили сообщение
+                            isSending = false // Сбрасываем флаг отправки при получении сообщения
                         )
                     } else {
-                        println("ChatDetailViewModel: Updating existing message")
                         // Обновляем существующее сообщение (например, если изменился статус прочитанности)
                         _state.value = _state.value.copy(
                             messages = _state.value.messages.map { 
@@ -121,7 +123,6 @@ class ChatDetailViewModel(
                     }
                 }
             } catch (e: Exception) {
-                println("ChatDetailViewModel: WebSocket connection error: ${e.message}")
                 _state.value = _state.value.copy(
                     isConnected = false,
                     error = "Ошибка подключения к WebSocket: ${e.message}"
@@ -137,8 +138,12 @@ class ChatDetailViewModel(
             _state.value = _state.value.copy(isSending = true)
             
             try {
-                // Проверяем, подключен ли WebSocket
-                if (!_state.value.isConnected) {
+                // Всегда пытаемся использовать WebSocket для отправки (быстрее и реактивнее)
+                // Если WebSocket подключен, отправляем через него
+                if (_state.value.isConnected) {
+                    repository.sendMessageViaWebSocket(text)
+                    // Флаг isSending будет сброшен автоматически при получении сообщения через WebSocket
+                } else {
                     // Если WebSocket не подключен, используем REST API как fallback
                     val idToUse = currentChatId ?: chatId
                     when (val result = repository.sendMessage(idToUse, text)) {
@@ -155,17 +160,6 @@ class ChatDetailViewModel(
                             )
                         }
                         is ApiResult.Loading -> {}
-                    }
-                } else {
-                    // Используем WebSocket для отправки - это обеспечит реактивность
-                    // Сообщение будет автоматически добавлено в список через WebSocket поток
-                    repository.sendMessageViaWebSocket(text)
-                    
-                    // Сбрасываем флаг отправки через небольшую задержку
-                    // Если сообщение не придет через WebSocket, флаг все равно сбросится
-                    kotlinx.coroutines.delay(1000)
-                    if (_state.value.isSending) {
-                        _state.value = _state.value.copy(isSending = false)
                     }
                 }
             } catch (e: Exception) {
