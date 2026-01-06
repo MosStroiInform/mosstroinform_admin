@@ -334,7 +334,7 @@ private fun TabContent(selectedTab: Int) {
                 3 -> {} // Placeholder for "More" tab (не должен показываться)
                 4 -> ConstructionObjectsScreenContainer()
                 5 -> ChatsScreenContainer()
-                6 -> StatisticsScreen(onBackClick = { })
+                6 -> StatisticsScreen()
                 else -> DashboardScreenContent(
                     onStatisticsClick = { /* Статистика на отдельном табе */ }
                 )
@@ -349,7 +349,7 @@ private fun TabContent(selectedTab: Int) {
                 2 -> ConstructionObjectsScreenContainer()
                 3 -> DocumentsScreenContainer()
                 4 -> ChatsScreenContainer()
-                5 -> StatisticsScreen(onBackClick = { })
+                5 -> StatisticsScreen()
                 else -> DashboardScreenContent(
                     onStatisticsClick = { /* Статистика на отдельном табе */ }
                 )

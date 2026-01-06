@@ -180,26 +180,33 @@ private fun StatCard(
                 .fillMaxSize()
                 .padding(AdaptivePadding.medium),
             horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(32.dp)
-            )
-            Column {
+            // Иконка и цифра в одной строке
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(32.dp)
+                )
                 Text(
                     text = value,
                     style = MaterialTheme.typography.headlineMedium,
                     color = color
                 )
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
+            // Текст под ними
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
