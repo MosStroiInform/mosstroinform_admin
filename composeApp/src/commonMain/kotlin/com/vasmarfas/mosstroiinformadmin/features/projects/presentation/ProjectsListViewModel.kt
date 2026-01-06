@@ -28,6 +28,8 @@ class ProjectsListViewModel(
     
     // Кэш для проектов
     private var cachedProjects: List<Project>? = null
+    // Флаг для отслеживания первого запроса
+    private var isFirstLoad = true
     
     init {
         loadProjects()
@@ -46,7 +48,13 @@ class ProjectsListViewModel(
                 _state.value = _state.value.copy(isLoading = true, error = null)
             }
             
-            val result = repository.getProjects()
+            // Для первого запроса используем короткий таймаут (5 секунд), чтобы быстрее сделать retry
+            val isFirstRequest = isFirstLoad && cachedProjects == null
+            if (isFirstRequest) {
+                isFirstLoad = false
+            }
+            
+            val result = repository.getProjects(isFirstRequest = isFirstRequest)
             
             when (result) {
                 is ApiResult.Success -> {
