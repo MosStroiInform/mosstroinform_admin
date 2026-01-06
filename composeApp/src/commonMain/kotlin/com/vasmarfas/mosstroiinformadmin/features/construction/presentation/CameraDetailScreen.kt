@@ -13,6 +13,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.loadImageFromUrl
+import com.vasmarfas.mosstroiinformadmin.core.ui.components.VideoPlayer
 import io.ktor.client.HttpClient
 import org.koin.compose.koinInject
 import androidx.compose.ui.Alignment
@@ -101,22 +102,40 @@ private fun CameraContent(camera: Camera, httpClient: HttpClient = koinInject())
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                // Преобразуем RTSP в HTTPS для веб-просмотра
-                val videoUrl = remember(camera.streamUrl) {
-                    if (camera.streamUrl.startsWith("rtsp://")) {
-                        // Преобразуем rtsp://mosstroiinformmedia.vasmarfas.com:8554/vid1
-                        // в https://mosstroiinformmedia.vasmarfas.com:8889/vid1/
-                        camera.streamUrl
-                            .replace("rtsp://", "https://")
-                            .replace(":8554/", ":8889/")
-                            .let { if (!it.endsWith("/")) "$it/" else it }
-                    } else {
-                        camera.streamUrl
+                    // Преобразуем RTSP в HTTPS для веб-просмотра (WebRTC через MediaMTX)
+                    val videoUrl = remember(camera.streamUrl) {
+                        if (camera.streamUrl.startsWith("rtsp://")) {
+                            // Преобразуем rtsp://mosstroiinformmedia.vasmarfas.com:8554/vid1
+                            // в https://mosstroiinformmedia.vasmarfas.com:8889/vid1/
+                            // MediaMTX предоставляет WebRTC через HTTPS на порту 8889
+                            var url = camera.streamUrl
+                                .replace("rtsp://", "https://")
+                                .replace(":8554/", ":8889/")
+                                .replace(":8554", ":8889")
+                            // Убеждаемся, что URL заканчивается на / для MediaMTX
+                            if (!url.endsWith("/")) {
+                                url += "/"
+                            }
+                            url
+                        } else {
+                            camera.streamUrl
+                        }
                     }
-                }
                 
-                // Показываем превью если есть thumbnailUrl, иначе видеопоток
+                // Показываем видеопоток если камера активна
                 when {
+                    camera.isActive -> {
+                        // Показываем видеопоток
+                        VideoPlayer(
+                            url = videoUrl,
+                            modifier = Modifier.fillMaxSize(),
+                            autoPlay = true,
+                            muted = true,  // MediaMTX требует muted=true для автозапуска
+                            onError = { error ->
+                                println("Video player error: $error")
+                            }
+                        )
+                    }
                     camera.thumbnailUrl != null && camera.thumbnailUrl.isNotBlank() -> {
                         // Показываем превью изображение
                         var imageBitmap by remember(camera.thumbnailUrl) { mutableStateOf<ImageBitmap?>(null) }
@@ -136,10 +155,16 @@ private fun CameraContent(camera: Camera, httpClient: HttpClient = koinInject())
                                     println("Thumbnail loaded successfully")
                                 }
                             } catch (e: Exception) {
-                                println("Error loading thumbnail: ${e.message}")
-                                loadError = e.message ?: "Ошибка загрузки"
+                                // Игнорируем LeftCompositionCancellationException - это нормально при выходе из композиции
+                                val isCancellation = e::class.simpleName?.contains("LeftComposition") == true || 
+                                                     e::class.simpleName?.contains("Cancellation") == true
+                                if (!isCancellation) {
+                                    println("Error loading thumbnail: ${e.message}")
+                                    loadError = e.message ?: "Ошибка загрузки"
+                                }
+                            } finally {
+                                isLoading = false
                             }
-                            isLoading = false
                         }
                         
                         when {

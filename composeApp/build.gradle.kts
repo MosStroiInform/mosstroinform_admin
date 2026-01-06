@@ -47,6 +47,11 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.material3.windowsize)
             implementation(libs.ktor.client.okhttp)
+            // ExoPlayer для воспроизведения видео
+            implementation("androidx.media3:media3-exoplayer:1.2.1")
+            implementation("androidx.media3:media3-ui:1.2.1")
+            implementation("androidx.media3:media3-common:1.2.1")
+            implementation("androidx.media3:media3-exoplayer-hls:1.2.1") // HLS поддержка
         }
         
         iosMain.dependencies {
@@ -170,6 +175,10 @@ compose.desktop {
             
             description = "Административная панель MosStroiInform"
             vendor = "vasmarfas"
+            
+            // Иконка приложения для всех платформ
+            // Примечание: иконка настраивается через файл в resources
+            // Файл должен быть: composeApp/src/jvmMain/resources/icon.png
 
             windows {
                 menuGroup = "MosStroiInform"

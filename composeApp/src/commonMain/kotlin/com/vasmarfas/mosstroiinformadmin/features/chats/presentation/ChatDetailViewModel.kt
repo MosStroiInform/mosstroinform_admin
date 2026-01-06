@@ -101,7 +101,7 @@ class ChatDetailViewModel(
                 // Устанавливаем флаг подключения сразу при начале подключения
                 _state.value = _state.value.copy(isConnected = true)
                 
-                repository.connectToChat(idToLoad).collect { message ->
+            repository.connectToChat(idToLoad).collect { message ->
                     // Оптимизированная проверка на дубликаты - используем Set для быстрого поиска
                     val messageIds = _state.value.messages.map { it.id }.toSet()
                     
@@ -146,20 +146,20 @@ class ChatDetailViewModel(
                 } else {
                     // Если WebSocket не подключен, используем REST API как fallback
                     val idToUse = currentChatId ?: chatId
-                    when (val result = repository.sendMessage(idToUse, text)) {
-                        is ApiResult.Success -> {
-                            _state.value = _state.value.copy(
-                                messages = _state.value.messages + result.data,
-                                isSending = false
-                            )
-                        }
-                        is ApiResult.Error -> {
-                            _state.value = _state.value.copy(
-                                error = result.message,
-                                isSending = false
-                            )
-                        }
-                        is ApiResult.Loading -> {}
+            when (val result = repository.sendMessage(idToUse, text)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        messages = _state.value.messages + result.data,
+                        isSending = false
+                    )
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        error = result.message,
+                        isSending = false
+                    )
+                }
+                is ApiResult.Loading -> {}
                     }
                 }
             } catch (e: Exception) {
