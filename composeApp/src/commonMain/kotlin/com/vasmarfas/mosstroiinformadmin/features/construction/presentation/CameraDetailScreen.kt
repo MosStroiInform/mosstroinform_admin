@@ -102,24 +102,13 @@ private fun CameraContent(camera: Camera, httpClient: HttpClient = koinInject())
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                    // Преобразуем RTSP в HTTPS для веб-просмотра (WebRTC через MediaMTX)
+                    // Для Android используем RTSP напрямую через ExoPlayer
+                    // Для Web/WASM преобразуем RTSP в WebRTC через MediaMTX
                     val videoUrl = remember(camera.streamUrl) {
-                        if (camera.streamUrl.startsWith("rtsp://")) {
-                            // Преобразуем rtsp://mosstroiinformmedia.vasmarfas.com:8554/vid1
-                            // в https://mosstroiinformmedia.vasmarfas.com:8889/vid1/
-                            // MediaMTX предоставляет WebRTC через HTTPS на порту 8889
-                            var url = camera.streamUrl
-                                .replace("rtsp://", "https://")
-                                .replace(":8554/", ":8889/")
-                                .replace(":8554", ":8889")
-                            // Убеждаемся, что URL заканчивается на / для MediaMTX
-                            if (!url.endsWith("/")) {
-                                url += "/"
-                            }
-                            url
-                        } else {
-                            camera.streamUrl
-                        }
+                        // На Android ExoPlayer поддерживает RTSP напрямую
+                        // Преобразование RTSP в WebRTC нужно только для Web/WASM
+                        // Здесь оставляем оригинальный URL - ExoPlayer сам разберется
+                        camera.streamUrl
                     }
                 
                 // Показываем видеопоток если камера активна
@@ -130,7 +119,7 @@ private fun CameraContent(camera: Camera, httpClient: HttpClient = koinInject())
                             url = videoUrl,
                             modifier = Modifier.fillMaxSize(),
                             autoPlay = true,
-                            muted = true,  // MediaMTX требует muted=true для автозапуска
+                            muted = false,  // ExoPlayer поддерживает RTSP напрямую, звук можно включить
                             onError = { error ->
                                 println("Video player error: $error")
                             }

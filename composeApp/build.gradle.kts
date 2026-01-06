@@ -52,6 +52,7 @@ kotlin {
             implementation("androidx.media3:media3-ui:1.2.1")
             implementation("androidx.media3:media3-common:1.2.1")
             implementation("androidx.media3:media3-exoplayer-hls:1.2.1") // HLS поддержка
+            implementation("androidx.media3:media3-exoplayer-rtsp:1.2.1") // RTSP поддержка
         }
         
         iosMain.dependencies {
