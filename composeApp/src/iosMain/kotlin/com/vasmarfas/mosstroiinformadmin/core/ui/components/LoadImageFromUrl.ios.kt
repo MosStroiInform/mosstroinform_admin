@@ -6,28 +6,51 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlin.OptIn
 
+// Максимальное количество попыток при SSL ошибках
+private const val MAX_RETRIES = 3
+// Задержка между попытками (в миллисекундах)
+private const val RETRY_DELAY_MS = 500L
+
 actual suspend fun loadImageFromUrl(
     url: String,
     httpClient: HttpClient
 ): ImageBitmap? {
-    return try {
-        val bytes = withContext(Dispatchers.Default) {
-            httpClient.get(url).body<ByteArray>()
+    var lastException: Exception? = null
+    for (attempt in 1..MAX_RETRIES) {
+        try {
+            val bytes = withContext(Dispatchers.Default) {
+                httpClient.get(url).body<ByteArray>()
+            }
+            
+            if (bytes.isEmpty()) {
+                return null
+            }
+            
+            // Используем Skia для декодирования изображения (как в JS/WASM)
+            val image = Image.makeFromEncoded(bytes)
+            return image.toComposeImageBitmap()
+        } catch (e: Exception) {
+            lastException = e
+            val isSslError = e.message?.contains("SSL", ignoreCase = true) == true ||
+                            e.message?.contains("ssl", ignoreCase = true) == true ||
+                            e.message?.contains("TLS", ignoreCase = true) == true ||
+                            e.message?.contains("tls", ignoreCase = true) == true ||
+                            (e.cause?.message?.contains("SSL", ignoreCase = true) == true) ||
+                            (e.cause?.message?.contains("ssl", ignoreCase = true) == true)
+            
+            if (isSslError && attempt < MAX_RETRIES) {
+                delay(RETRY_DELAY_MS * attempt)
+                continue
+            } else {
+                break
+            }
         }
-        
-        if (bytes.isEmpty()) {
-            return null
-        }
-        
-        // Используем Skia для декодирования изображения (как в JS/WASM)
-        val image = Image.makeFromEncoded(bytes)
-        image.toComposeImageBitmap()
-    } catch (e: Exception) {
-        null
     }
+    return null
 }

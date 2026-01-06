@@ -381,42 +381,42 @@ private fun CameraContent(camera: Camera, httpClient: HttpClient = koinInject())
         }
 
         // Инструкция
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            )
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                    Text(
-                        text = "Информация",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Text(
-                    text = "Для просмотра видеопотока в реальном времени используйте мобильное приложение. " +
-                            "Админ-панель показывает информацию о камере и позволяет управлять настройками.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
-        }
+//        Card(
+//            modifier = Modifier.fillMaxWidth(),
+//            colors = CardDefaults.cardColors(
+//                containerColor = MaterialTheme.colorScheme.secondaryContainer
+//            )
+//        ) {
+//            Column(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(16.dp),
+//                verticalArrangement = Arrangement.spacedBy(8.dp)
+//            ) {
+//                Row(
+//                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    Icon(
+//                        imageVector = Icons.Default.Info,
+//                        contentDescription = null,
+//                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+//                    )
+//                    Text(
+//                        text = "Информация",
+//                        style = MaterialTheme.typography.titleSmall,
+//                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+//                        fontWeight = FontWeight.Bold
+//                    )
+//                }
+//                Text(
+//                    text = "Для просмотра видеопотока в реальном времени используйте мобильное приложение. " +
+//                            "Админ-панель показывает информацию о камере и позволяет управлять настройками.",
+//                    style = MaterialTheme.typography.bodySmall,
+//                    color = MaterialTheme.colorScheme.onSecondaryContainer
+//                )
+//            }
+//        }
 
         // Кнопки действий
         Row(

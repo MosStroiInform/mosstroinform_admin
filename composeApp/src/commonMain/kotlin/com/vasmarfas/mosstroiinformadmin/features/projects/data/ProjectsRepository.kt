@@ -10,7 +10,7 @@ import kotlinx.coroutines.withTimeout
 class ProjectsRepository(private val api: ProjectsApi) {
     
     // Максимальное количество попыток при таймауте
-    private val MAX_RETRIES = 5
+    private val MAX_RETRIES = 3
     // Задержка между попытками (в миллисекундах) - экспоненциальная
     private val RETRY_DELAY_MS = 500L
     // Таймаут для первого запроса (5 секунд)

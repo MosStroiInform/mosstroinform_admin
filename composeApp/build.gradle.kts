@@ -47,6 +47,8 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.material3.windowsize)
             implementation(libs.ktor.client.okhttp)
+            // Coil для надежной загрузки изображений с правильной обработкой SSL
+            implementation("io.coil-kt:coil-compose:2.5.0")
             // ExoPlayer для воспроизведения видео
             implementation("androidx.media3:media3-exoplayer:1.2.1")
             implementation("androidx.media3:media3-ui:1.2.1")
