@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.vasmarfas.mosstroiinformadmin.core.utils.adjustStreamUrlForNonAndroid
 import com.vasmarfas.mosstroiinformadmin.core.utils.openUrlInBrowser
 
 /**
@@ -24,6 +25,8 @@ actual fun VideoPlayer(
     muted: Boolean,
     onError: ((String) -> Unit)?
 ) {
+    val resolvedUrl = remember(url) { adjustStreamUrlForNonAndroid(url) }
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.surfaceVariant
@@ -54,7 +57,7 @@ actual fun VideoPlayer(
             Spacer(Modifier.height(16.dp))
             Button(
                 onClick = {
-                    openUrlInBrowser(url)
+                    openUrlInBrowser(resolvedUrl)
                 }
             ) {
                 Icon(
