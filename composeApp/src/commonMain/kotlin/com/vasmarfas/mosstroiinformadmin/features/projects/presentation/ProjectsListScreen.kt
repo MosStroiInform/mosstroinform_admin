@@ -95,6 +95,7 @@ fun ProjectsListScreen(
                                 ) { project ->
                                     ProjectCard(
                                         project = project,
+                                        isCompleted = state.completedProjects[project.id] ?: false,
                                         onClick = { onProjectClick(project.id) },
                                         onApproveRequest = if (project.status == "requested") {
                                             { onApproveRequest?.invoke(project.id) }
@@ -156,6 +157,7 @@ private fun FilterChips(
 @Composable
 private fun ProjectCard(
     project: Project,
+    isCompleted: Boolean = false,
     onClick: () -> Unit,
     onApproveRequest: ((String) -> Unit)? = null,
     onRejectRequest: ((String) -> Unit)? = null
@@ -184,7 +186,13 @@ private fun ProjectCard(
                     modifier = Modifier.weight(1f)
                 )
                 
-                StatusBadge(status = ProjectStatus.fromValue(project.status).displayName)
+                // Показываем "Завершен" если isCompleted = true, иначе используем статус проекта
+                val statusText = if (isCompleted) {
+                    "Завершен"
+                } else {
+                    ProjectStatus.fromValue(project.status).displayName
+                }
+                StatusBadge(status = statusText)
             }
             
             // Address

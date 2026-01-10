@@ -7,6 +7,7 @@ import com.vasmarfas.mosstroiinformadmin.core.network.ApiResult
 import com.vasmarfas.mosstroiinformadmin.features.projects.data.ProjectsRepository
 import com.vasmarfas.mosstroiinformadmin.features.construction.data.ConstructionSitesRepository
 import com.vasmarfas.mosstroiinformadmin.features.admin.data.AdminRepository
+import com.vasmarfas.mosstroiinformadmin.features.completion.data.CompletionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 data class ProjectDetailState(
     val isLoading: Boolean = false,
     val project: Project? = null,
+    val isCompleted: Boolean = false, // Флаг завершения проекта из completion status
     val error: String? = null,
     val isRequestingConstruction: Boolean = false,
     val isStartingConstruction: Boolean = false,
@@ -26,7 +28,8 @@ class ProjectDetailViewModel(
     private val projectId: String,
     private val repository: ProjectsRepository,
     private val sitesRepository: ConstructionSitesRepository,
-    private val adminRepository: AdminRepository
+    private val adminRepository: AdminRepository,
+    private val completionRepository: CompletionRepository
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(ProjectDetailState())
@@ -54,12 +57,17 @@ class ProjectDetailViewModel(
             val idToLoad = currentProjectId ?: projectId
             _state.value = _state.value.copy(isLoading = true, error = null)
             
+            // Загружаем проект
             when (val result = repository.getProject(idToLoad)) {
                 is ApiResult.Success -> {
+                    val project = result.data
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        project = result.data
+                        project = project
                     )
+                    
+                    // Загружаем completion status для проверки is_completed
+                    loadCompletionStatus(idToLoad)
                 }
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
@@ -70,6 +78,26 @@ class ProjectDetailViewModel(
                 is ApiResult.Loading -> {
                     _state.value = _state.value.copy(isLoading = true)
                 }
+            }
+        }
+    }
+    
+    private fun loadCompletionStatus(projectId: String) {
+        viewModelScope.launch {
+            // Загружаем completion status для проверки is_completed
+            when (val result = completionRepository.getCompletionStatus(projectId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        isCompleted = result.data.isCompleted
+                    )
+                }
+                is ApiResult.Error -> {
+                    // Если не удалось загрузить completion status, считаем что проект не завершен
+                    _state.value = _state.value.copy(
+                        isCompleted = false
+                    )
+                }
+                ApiResult.Loading -> {}
             }
         }
     }
@@ -87,6 +115,7 @@ class ProjectDetailViewModel(
                     )
                     // Перезагружаем проект чтобы обновить статус
                     loadProject()
+                    loadCompletionStatus(idToUse)
                 }
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
@@ -112,6 +141,7 @@ class ProjectDetailViewModel(
                     )
                     // Перезагружаем проект
                     loadProject()
+                    loadCompletionStatus(idToUse)
                 }
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
@@ -129,7 +159,9 @@ class ProjectDetailViewModel(
     }
     
     fun refreshProject() {
+        val idToLoad = currentProjectId ?: projectId
         loadProject()
+        loadCompletionStatus(idToLoad)
     }
 
     fun updateStageStatus(stageId: String, status: String) {
@@ -156,6 +188,7 @@ class ProjectDetailViewModel(
                         actionSuccess = true
                     )
                     loadProject()
+                    loadCompletionStatus(idToUse) // Перезагружаем completion status, так как прогресс мог измениться
                 }
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(

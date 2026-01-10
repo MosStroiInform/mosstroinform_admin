@@ -10,7 +10,7 @@ import org.koin.dsl.module
 val projectsModule = module {
     single { ProjectsApi(get()) }
     single { ProjectsRepository(get()) }
-    viewModel { ProjectsListViewModel(get()) }
-    viewModel { params -> ProjectDetailViewModel(params.get(), get(), get(), get()) }
+    viewModel { ProjectsListViewModel(get(), get()) } // Добавлен CompletionRepository
+    viewModel { params -> ProjectDetailViewModel(params.get(), get(), get(), get(), get()) } // Добавлен CompletionRepository
 }
 

@@ -122,13 +122,17 @@ private fun ProjectDetailScreenContent(
                     ) {
                         // Основная информация
                         item {
-                            ProjectInfoCard(project = state.project!!)
+                            ProjectInfoCard(
+                                project = state.project!!,
+                                isCompleted = state.isCompleted
+                            )
                         }
                         
                         // Действия
                         item {
                             ProjectActionsCard(
                                 project = state.project!!,
+                                isCompleted = state.isCompleted,
                                 isRequestingConstruction = state.isRequestingConstruction,
                                 isStartingConstruction = state.isStartingConstruction,
                                 onRequestConstruction = { viewModel.requestConstruction() },
@@ -190,7 +194,10 @@ private fun ProjectDetailScreenContent(
 }
 
 @Composable
-private fun ProjectInfoCard(project: Project) {
+private fun ProjectInfoCard(
+    project: Project,
+    isCompleted: Boolean = false
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -199,8 +206,13 @@ private fun ProjectInfoCard(project: Project) {
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Статус
-            StatusBadge(status = ProjectStatus.fromValue(project.status).displayName)
+            // Статус - показываем "Завершен" если isCompleted = true, иначе используем статус проекта
+            val statusText = if (isCompleted) {
+                "Завершен"
+            } else {
+                ProjectStatus.fromValue(project.status).displayName
+            }
+            StatusBadge(status = statusText)
             
             // Название
             Text(
@@ -283,6 +295,7 @@ private fun ProjectInfoCard(project: Project) {
 @Composable
 private fun ProjectActionsCard(
     project: Project,
+    isCompleted: Boolean,
     isRequestingConstruction: Boolean,
     isStartingConstruction: Boolean,
     onRequestConstruction: () -> Unit,
@@ -292,7 +305,9 @@ private fun ProjectActionsCard(
 ) {
     val status = ProjectStatus.fromValue(project.status)
     
-    if (status == ProjectStatus.AVAILABLE || status == ProjectStatus.REQUESTED || status == ProjectStatus.IN_PROGRESS || status == ProjectStatus.COMPLETED) {
+    // Если проект завершен, не показываем кнопку "Завершение проекта"
+    // Показываем только кнопку для просмотра завершения (для просмотра документов)
+    if (status == ProjectStatus.AVAILABLE || status == ProjectStatus.REQUESTED || status == ProjectStatus.IN_PROGRESS || (status == ProjectStatus.COMPLETED && isCompleted)) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -357,24 +372,46 @@ private fun ProjectActionsCard(
                                 Spacer(Modifier.width(8.dp))
                                 Text("Смотреть строительную площадку")
                             }
-                            Button(
-                                onClick = onViewCompletion,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null)
-                                Spacer(Modifier.width(8.dp))
-                                Text("Завершение проекта")
+                            // Показываем кнопку "Завершение проекта" только если проект не завершен
+                            if (!isCompleted) {
+                                Button(
+                                    onClick = onViewCompletion,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Завершение проекта")
+                                }
+                            } else {
+                                // Если проект завершен, показываем кнопку для просмотра завершения
+                                Button(
+                                    onClick = onViewCompletion,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                    )
+                                ) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Просмотр завершения проекта")
+                                }
                             }
                         }
                     }
                     ProjectStatus.COMPLETED -> {
-                        Button(
-                            onClick = onViewCompletion,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Завершение проекта")
+                        // Если статус COMPLETED и isCompleted = true, показываем только просмотр
+                        if (isCompleted) {
+                            Button(
+                                onClick = onViewCompletion,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                )
+                            ) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Просмотр завершения проекта")
+                            }
                         }
                     }
                 }
@@ -647,6 +684,7 @@ private fun ProjectActionsCardPreview() {
                     price = 30000000,
                     status = "available"
                 ),
+                isCompleted = false,
                 isRequestingConstruction = false,
                 isStartingConstruction = false,
                 onRequestConstruction = {},
@@ -664,6 +702,7 @@ private fun ProjectActionsCardPreview() {
                     price = 30000000,
                     status = "requested"
                 ),
+                isCompleted = false,
                 isRequestingConstruction = false,
                 isStartingConstruction = false,
                 onRequestConstruction = {},
@@ -681,6 +720,7 @@ private fun ProjectActionsCardPreview() {
                     price = 30000000,
                     status = "construction"
                 ),
+                isCompleted = false,
                 isRequestingConstruction = false,
                 isStartingConstruction = false,
                 onRequestConstruction = {},
@@ -726,11 +766,12 @@ private fun ProjectDetailScreenContentPreview() {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            ProjectInfoCard(project = mockProject)
+            ProjectInfoCard(project = mockProject, isCompleted = false)
         }
         item {
             ProjectActionsCard(
                 project = mockProject,
+                isCompleted = false,
                 isRequestingConstruction = false,
                 isStartingConstruction = false,
                 onRequestConstruction = {},
