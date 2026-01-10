@@ -33,7 +33,8 @@ data class ProjectUpdateRequest(
     val bathrooms: Int? = null,
     @SerialName("image_url")
     val imageUrl: String? = null,
-    val status: String? = null
+    val status: String? = null,
+    val stages: List<String>? = null
 )
 
 @Serializable

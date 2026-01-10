@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
+import com.vasmarfas.mosstroiinformadmin.core.ui.components.LoadingIndicator
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -36,6 +37,22 @@ fun ProjectCreateEditScreen(
     var bathrooms by remember { mutableStateOf("0") }
     var imageUrl by remember { mutableStateOf("") }
     var stagesText by remember { mutableStateOf("") }
+    
+    // Подставляем значения из загруженного проекта
+    LaunchedEffect(state.project) {
+        state.project?.let { project ->
+            name = project.name
+            address = project.address
+            description = project.description ?: ""
+            area = project.area.toString()
+            floors = project.floors.toString()
+            price = project.price.toString()
+            bedrooms = project.bedrooms.toString()
+            bathrooms = project.bathrooms.toString()
+            imageUrl = project.imageUrl ?: ""
+            stagesText = project.stages.joinToString(", ") { it.name }
+        }
+    }
 
     // Автоматически закрыть при успехе
     LaunchedEffect(state.success) {
@@ -73,14 +90,14 @@ fun ProjectCreateEditScreen(
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             // Сообщение об успехе
             if (state.success) {
                 Card(
@@ -244,6 +261,7 @@ fun ProjectCreateEditScreen(
                             stages = stages
                         )
                     } else {
+                        val stages = stagesText.split(",").map { it.trim() }.filter { it.isNotBlank() }
                         viewModel.updateProject(
                             name = name.ifBlank { null },
                             address = address.ifBlank { null },
@@ -253,7 +271,8 @@ fun ProjectCreateEditScreen(
                             price = price.toFloatOrNull(),
                             bedrooms = bedrooms.toIntOrNull(),
                             bathrooms = bathrooms.toIntOrNull(),
-                            imageUrl = imageUrl.ifBlank { null }
+                            imageUrl = imageUrl.ifBlank { null },
+                            stages = stages.ifEmpty { null }
                         )
                     }
                 },
@@ -270,6 +289,18 @@ fun ProjectCreateEditScreen(
                     )
                 } else {
                     Text(if (projectId == null) "Создать" else "Сохранить")
+                }
+            }
+            
+            }
+            
+            // Индикатор загрузки при редактировании
+            if (state.isLoading && projectId != null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = androidx.compose.ui.Alignment.Center
+                ) {
+                    LoadingIndicator()
                 }
             }
         }

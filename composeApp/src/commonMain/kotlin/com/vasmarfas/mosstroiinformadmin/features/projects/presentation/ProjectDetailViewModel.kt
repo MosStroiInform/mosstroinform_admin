@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Project
 import com.vasmarfas.mosstroiinformadmin.core.network.ApiResult
 import com.vasmarfas.mosstroiinformadmin.features.projects.data.ProjectsRepository
+import com.vasmarfas.mosstroiinformadmin.features.construction.data.ConstructionSitesRepository
+import com.vasmarfas.mosstroiinformadmin.features.admin.data.AdminRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,12 +18,15 @@ data class ProjectDetailState(
     val error: String? = null,
     val isRequestingConstruction: Boolean = false,
     val isStartingConstruction: Boolean = false,
+    val updatingStageId: String? = null,
     val actionSuccess: Boolean = false
 )
 
 class ProjectDetailViewModel(
     private val projectId: String,
-    private val repository: ProjectsRepository
+    private val repository: ProjectsRepository,
+    private val sitesRepository: ConstructionSitesRepository,
+    private val adminRepository: AdminRepository
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(ProjectDetailState())
@@ -125,6 +130,42 @@ class ProjectDetailViewModel(
     
     fun refreshProject() {
         loadProject()
+    }
+
+    fun updateStageStatus(stageId: String, status: String) {
+        viewModelScope.launch {
+            val idToUse = currentProjectId ?: projectId
+            _state.value = _state.value.copy(updatingStageId = stageId, error = null, actionSuccess = false)
+
+            // Получаем construction site ID по project ID
+            val siteResult = sitesRepository.getSiteByProject(idToUse)
+            if (siteResult !is ApiResult.Success) {
+                _state.value = _state.value.copy(
+                    updatingStageId = null,
+                    error = "Не удалось найти строительную площадку для проекта"
+                )
+                return@launch
+            }
+
+            val siteId = siteResult.data.id
+
+            when (adminRepository.updateStageStatus(siteId, stageId, status)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        updatingStageId = null,
+                        actionSuccess = true
+                    )
+                    loadProject()
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        updatingStageId = null,
+                        error = "Ошибка обновления статуса этапа"
+                    )
+                }
+                ApiResult.Loading -> {}
+            }
+        }
     }
 }
 

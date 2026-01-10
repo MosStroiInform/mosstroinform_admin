@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.vasmarfas.mosstroiinformadmin.core.data.models.ConstructionObject
 import com.vasmarfas.mosstroiinformadmin.core.network.ApiResult
 import com.vasmarfas.mosstroiinformadmin.features.construction_objects.data.ConstructionObjectsRepository
+import com.vasmarfas.mosstroiinformadmin.features.admin.data.AdminRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,12 +17,14 @@ data class ConstructionObjectDetailState(
     val error: String? = null,
     val isCompleting: Boolean = false,
     val isUpdatingDocumentsStatus: Boolean = false,
+    val updatingStageId: String? = null,
     val actionSuccess: Boolean = false
 )
 
 class ConstructionObjectDetailViewModel(
     private val objectId: String,
-    private val repository: ConstructionObjectsRepository
+    private val repository: ConstructionObjectsRepository,
+    private val adminRepository: AdminRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ConstructionObjectDetailState())
@@ -108,6 +111,29 @@ class ConstructionObjectDetailViewModel(
 
     fun clearError() {
         _state.value = _state.value.copy(error = null)
+    }
+
+    fun updateStageStatus(stageId: String, status: String) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(updatingStageId = stageId, error = null, actionSuccess = false)
+
+            when (adminRepository.updateStageStatus(objectId, stageId, status)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        updatingStageId = null,
+                        actionSuccess = true
+                    )
+                    loadObject()
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        updatingStageId = null,
+                        error = "Ошибка обновления статуса этапа"
+                    )
+                }
+                ApiResult.Loading -> {}
+            }
+        }
     }
 }
 

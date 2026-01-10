@@ -58,6 +58,7 @@ object ApiConfig {
     object Completion {
         fun status(projectId: String) = "$API_VERSION/projects/$projectId/completion-status"
         fun finalDocuments(projectId: String) = "$API_VERSION/projects/$projectId/final-documents"
+        fun createFinalDocument(projectId: String) = "$API_VERSION/projects/$projectId/final-documents"
         fun finalDocument(projectId: String, documentId: String) = "$API_VERSION/projects/$projectId/final-documents/$documentId"
         fun sign(projectId: String, documentId: String) = "$API_VERSION/projects/$projectId/final-documents/$documentId/sign"
         fun rejectFinal(projectId: String, documentId: String) = "$API_VERSION/projects/$projectId/final-documents/$documentId/reject"

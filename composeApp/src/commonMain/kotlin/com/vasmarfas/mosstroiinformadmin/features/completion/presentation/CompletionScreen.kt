@@ -30,11 +30,38 @@ import org.koin.core.parameter.parametersOf
 @Composable
 fun CompletionScreen(
     projectId: String,
-    onBackClick: () -> Unit,
-    viewModel: CompletionViewModel = koinViewModel { parametersOf(projectId) }
+    onBackClick: () -> Unit
+) {
+    // Используем key для принудительного пересоздания ViewModel при изменении projectId
+    key(projectId) {
+        val viewModel: CompletionViewModel = koinViewModel(
+            key = "completion_$projectId",
+            parameters = { parametersOf(projectId) }
+        )
+        
+        CompletionScreenContent(
+            projectId = projectId,
+            viewModel = viewModel,
+            onBackClick = onBackClick
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CompletionScreenContent(
+    projectId: String,
+    viewModel: CompletionViewModel,
+    onBackClick: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showRejectDialog by remember { mutableStateOf<String?>(null) }
+    var showCreateDocumentDialog by remember { mutableStateOf(false) }
+    
+    // Перезагружаем данные при изменении projectId
+    LaunchedEffect(projectId) {
+        viewModel.updateProjectId(projectId)
+    }
 
     // Автоочистка успеха
     LaunchedEffect(state.actionSuccess) {
@@ -75,10 +102,14 @@ fun CompletionScreen(
                     CompletionContent(
                         completionStatus = state.completionStatus!!,
                         actionInProgress = state.actionInProgress,
+                        isCompleting = state.isCompleting,
+                        isCreatingDocument = state.isCreatingDocument,
                         onSignDocument = viewModel::signDocument,
                         onRejectDocument = { documentId ->
                             showRejectDialog = documentId
-                        }
+                        },
+                        onCreateDocument = { showCreateDocumentDialog = true },
+                        onCompleteProject = viewModel::completeProject
                     )
                 }
             }
@@ -106,15 +137,57 @@ fun CompletionScreen(
             }
         )
     }
+
+    // Диалог создания документа
+    if (showCreateDocumentDialog) {
+        CreateFinalDocumentDialog(
+            onDismiss = { showCreateDocumentDialog = false },
+            onConfirm = { title, description, fileUrl ->
+                viewModel.createFinalDocument(title, description, fileUrl)
+                showCreateDocumentDialog = false
+            }
+        )
+    }
 }
 
 @Composable
 private fun CompletionContent(
     completionStatus: CompletionStatus,
     actionInProgress: String?,
+    isCompleting: Boolean,
+    isCreatingDocument: Boolean,
     onSignDocument: (String) -> Unit,
-    onRejectDocument: (String) -> Unit
+    onRejectDocument: (String) -> Unit,
+    onCreateDocument: () -> Unit,
+    onCompleteProject: () -> Unit
 ) {
+    // Кнопка завершения проекта
+    // Показываем если проект еще не завершен, прогресс 100%, есть документы и все они подписаны
+    val allDocumentsSigned = completionStatus.documents.isNotEmpty() && 
+        completionStatus.documents.all { it.status == "signed" }
+    
+    val canComplete = !completionStatus.isCompleted && 
+        completionStatus.progress >= 1.0f &&
+        completionStatus.documents.isNotEmpty() &&
+        allDocumentsSigned
+    
+        // Отладочная информация (используем стабильный ключ)
+        LaunchedEffect(
+            completionStatus.isCompleted,
+            completionStatus.progress,
+            completionStatus.documents.size,
+            allDocumentsSigned
+        ) {
+            println("=== Условия завершения проекта ===")
+            println("isCompleted: ${completionStatus.isCompleted}")
+            println("progress: ${completionStatus.progress} (>= 1.0f: ${completionStatus.progress >= 1.0f})")
+            println("documents.isNotEmpty(): ${completionStatus.documents.isNotEmpty()}")
+            println("allDocumentsSigned (флаг): ${completionStatus.allDocumentsSigned}")
+            println("all documents signed (проверка): $allDocumentsSigned")
+            println("Статусы документов: ${completionStatus.documents.map { "${it.title}: ${it.status}" }}")
+            println("canComplete: $canComplete")
+        }
+    
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -131,7 +204,10 @@ private fun CompletionContent(
         }
 
         // Индикатор "Все документы подписаны"
-        if (completionStatus.allDocumentsSigned) {
+        // Показываем только если есть документы и все они подписаны
+        if (completionStatus.documents.isNotEmpty() && 
+            completionStatus.allDocumentsSigned &&
+            completionStatus.documents.all { it.status == "signed" }) {
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -165,11 +241,33 @@ private fun CompletionContent(
 
         // Финальные документы
         item {
-            Text(
-                text = "Финальные документы (${completionStatus.documents.size})",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Финальные документы (${completionStatus.documents.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(
+                    onClick = onCreateDocument,
+                    enabled = !isCreatingDocument
+                ) {
+                    if (isCreatingDocument) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Добавить документ"
+                        )
+                    }
+                }
+            }
         }
 
         if (completionStatus.documents.isEmpty()) {
@@ -185,7 +283,7 @@ private fun CompletionContent(
                             .fillMaxWidth()
                             .padding(32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Description,
@@ -195,7 +293,13 @@ private fun CompletionContent(
                         )
                         Text(
                             text = "Финальные документы еще не загружены",
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Нажмите кнопку + выше, чтобы создать новый финальный документ.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -211,6 +315,52 @@ private fun CompletionContent(
                     onSign = { onSignDocument(document.id) },
                     onReject = { onRejectDocument(document.id) }
                 )
+            }
+        }
+
+        if (canComplete) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Завершение проекта",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Все условия выполнены. Вы можете завершить проект.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Button(
+                            onClick = onCompleteProject,
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !isCompleting
+                        ) {
+                            if (isCompleting) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Завершить проект")
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -510,6 +660,71 @@ private fun RejectDialog(
     )
 }
 
+@Composable
+private fun CreateFinalDocumentDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String, String?) -> Unit
+) {
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var fileUrl by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.Default.Add,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        title = { Text("Создать финальный документ") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Название документа *") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Описание") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4
+                )
+                OutlinedTextField(
+                    value = fileUrl,
+                    onValueChange = { fileUrl = it },
+                    label = { Text("URL файла (опционально)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    placeholder = { Text("https://example.com/document.pdf") }
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(title, description, fileUrl.ifBlank { null }) },
+                enabled = title.isNotBlank()
+            ) {
+                Text("Создать")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Отмена")
+            }
+        }
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun StatusCardPreview() {
@@ -583,8 +798,12 @@ private fun CompletionScreenPreview() {
                 )
             ),
             actionInProgress = null,
+            isCompleting = false,
+            isCreatingDocument = false,
             onSignDocument = {},
-            onRejectDocument = {}
+            onRejectDocument = {},
+            onCreateDocument = {},
+            onCompleteProject = {}
         )
     }
 }

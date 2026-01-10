@@ -152,7 +152,11 @@ private fun ProjectDetailScreenContent(
                                 items = stages,
                                 key = { it.id }
                             ) { stage ->
-                                StageCard(stage = stage)
+                                StageCard(
+                                    stage = stage,
+                                    isUpdating = state.updatingStageId == stage.id,
+                                    onUpdateStatus = { status -> viewModel.updateStageStatus(stage.id, status) }
+                                )
                             }
                         }
                     }
@@ -342,13 +346,25 @@ private fun ProjectActionsCard(
                         }
                     }
                     ProjectStatus.IN_PROGRESS -> {
-                        Button(
-                            onClick = onViewConstructionSite,
-                            modifier = Modifier.fillMaxWidth()
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(Icons.Default.Videocam, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Смотреть строительную площадку")
+                            Button(
+                                onClick = onViewConstructionSite,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.Videocam, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Смотреть строительную площадку")
+                            }
+                            Button(
+                                onClick = onViewCompletion,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Завершение проекта")
+                            }
                         }
                     }
                     ProjectStatus.COMPLETED -> {
@@ -368,7 +384,11 @@ private fun ProjectActionsCard(
 }
 
 @Composable
-private fun StageCard(stage: ProjectStage) {
+private fun StageCard(
+    stage: ProjectStage,
+    isUpdating: Boolean = false,
+    onUpdateStatus: (String) -> Unit = {}
+) {
     val status = StageStatus.fromValue(stage.status)
     val color = when (status) {
         StageStatus.COMPLETED -> MaterialTheme.colorScheme.primary
@@ -382,41 +402,97 @@ private fun StageCard(stage: ProjectStage) {
             containerColor = color.copy(alpha = 0.1f)
         )
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Иконка статуса
-            val icon = when (status) {
-                StageStatus.COMPLETED -> Icons.Default.CheckCircle
-                StageStatus.IN_PROGRESS -> Icons.Default.Build
-                StageStatus.PENDING -> Icons.Default.Star
-            }
-            
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(32.dp)
-            )
-            
-            // Информация
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = stage.name,
-                    style = MaterialTheme.typography.titleSmall
+                // Иконка статуса
+                val icon = when (status) {
+                    StageStatus.COMPLETED -> Icons.Default.CheckCircle
+                    StageStatus.IN_PROGRESS -> Icons.Default.Build
+                    StageStatus.PENDING -> Icons.Default.Star
+                }
+                
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(32.dp)
                 )
-                Text(
-                    text = status.displayName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                
+                // Информация
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = stage.name,
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        text = status.displayName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Кнопки для изменения статуса
+            if (status != StageStatus.COMPLETED) {
+                HorizontalDivider()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    when (status) {
+                        StageStatus.PENDING -> {
+                            Button(
+                                onClick = { onUpdateStatus("in_progress") },
+                                modifier = Modifier.weight(1f),
+                                enabled = !isUpdating
+                            ) {
+                                if (isUpdating) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(Icons.Default.PlayArrow, contentDescription = null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Начать")
+                                }
+                            }
+                        }
+                        StageStatus.IN_PROGRESS -> {
+                            Button(
+                                onClick = { onUpdateStatus("completed") },
+                                modifier = Modifier.weight(1f),
+                                enabled = !isUpdating
+                            ) {
+                                if (isUpdating) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Завершить")
+                                }
+                            }
+                        }
+                        else -> {}
+                    }
+                }
             }
         }
     }
@@ -670,7 +746,11 @@ private fun ProjectDetailScreenContentPreview() {
             )
         }
         items(mockProject.stages) { stage ->
-            StageCard(stage = stage)
+            StageCard(
+                stage = stage,
+                isUpdating = false,
+                onUpdateStatus = {}
+            )
         }
     }
 }

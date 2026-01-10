@@ -11,6 +11,6 @@ val projectsModule = module {
     single { ProjectsApi(get()) }
     single { ProjectsRepository(get()) }
     viewModel { ProjectsListViewModel(get()) }
-    viewModel { params -> ProjectDetailViewModel(params.get(), get()) }
+    viewModel { params -> ProjectDetailViewModel(params.get(), get(), get(), get()) }
 }
 

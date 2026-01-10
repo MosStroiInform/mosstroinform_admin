@@ -24,6 +24,20 @@ class CompletionRepository(private val api: CompletionApi) {
         }
     }
 
+    suspend fun createFinalDocument(projectId: String, title: String, description: String, fileUrl: String?): ApiResult<FinalDocument> {
+        return try {
+            val request = com.vasmarfas.mosstroiinformadmin.core.data.models.FinalDocumentCreateRequest(
+                title = title,
+                description = description,
+                fileUrl = fileUrl
+            )
+            val document = api.createFinalDocument(projectId, request)
+            ApiResult.Success(document)
+        } catch (e: Exception) {
+            ApiResult.Error(e.message ?: "Ошибка создания финального документа")
+        }
+    }
+
     suspend fun signDocument(projectId: String, documentId: String): ApiResult<Unit> {
         return try {
             api.signDocument(projectId, documentId)
@@ -39,6 +53,15 @@ class CompletionRepository(private val api: CompletionApi) {
             ApiResult.Success(Unit)
         } catch (e: Exception) {
             ApiResult.Error(e.message ?: "Ошибка отклонения документа")
+        }
+    }
+
+    suspend fun completeProject(projectId: String): ApiResult<Unit> {
+        return try {
+            api.completeProject(projectId)
+            ApiResult.Success(Unit)
+        } catch (e: Exception) {
+            ApiResult.Error(e.message ?: "Ошибка завершения проекта")
         }
     }
 }

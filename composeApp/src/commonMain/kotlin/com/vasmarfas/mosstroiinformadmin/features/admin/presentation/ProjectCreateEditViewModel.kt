@@ -7,6 +7,7 @@ import com.vasmarfas.mosstroiinformadmin.core.data.models.ProjectCreateRequest
 import com.vasmarfas.mosstroiinformadmin.core.data.models.ProjectUpdateRequest
 import com.vasmarfas.mosstroiinformadmin.core.network.ApiResult
 import com.vasmarfas.mosstroiinformadmin.features.admin.data.AdminRepository
+import com.vasmarfas.mosstroiinformadmin.features.projects.data.ProjectsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,11 +23,45 @@ data class ProjectCreateEditState(
 
 class ProjectCreateEditViewModel(
     private val repository: AdminRepository,
+    private val projectsRepository: ProjectsRepository,
     private val projectId: String? = null
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ProjectCreateEditState())
     val state: StateFlow<ProjectCreateEditState> = _state.asStateFlow()
+    
+    init {
+        // Загружаем проект при редактировании
+        if (projectId != null) {
+            loadProject()
+        }
+    }
+    
+    private fun loadProject() {
+        if (projectId == null) return
+        
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null)
+            
+            when (val result = projectsRepository.getProject(projectId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        project = result.data
+                    )
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = result.message
+                    )
+                }
+                ApiResult.Loading -> {
+                    _state.value = _state.value.copy(isLoading = true)
+                }
+            }
+        }
+    }
 
     fun createProject(
         name: String,
@@ -87,7 +122,8 @@ class ProjectCreateEditViewModel(
         bedrooms: Int? = null,
         bathrooms: Int? = null,
         imageUrl: String? = null,
-        status: String? = null
+        status: String? = null,
+        stages: List<String>? = null
     ) {
         if (projectId == null) return
 
@@ -104,7 +140,8 @@ class ProjectCreateEditViewModel(
                 bedrooms = bedrooms,
                 bathrooms = bathrooms,
                 imageUrl = imageUrl,
-                status = status
+                status = status,
+                stages = stages
             )
 
             when (val result = repository.updateProject(projectId, request)) {

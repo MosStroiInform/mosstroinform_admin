@@ -11,6 +11,6 @@ val constructionObjectsModule = module {
     single { ConstructionObjectsApi(get()) }
     single { ConstructionObjectsRepository(get()) }
     viewModel { ConstructionObjectsListViewModel(get()) }
-    viewModel { params -> ConstructionObjectDetailViewModel(params.get(), get()) }
+    viewModel { params -> ConstructionObjectDetailViewModel(params.get(), get(), get()) }
 }
 
