@@ -2,6 +2,7 @@ package com.vasmarfas.mosstroiinformadmin.features.projects.data
 
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Project
 import com.vasmarfas.mosstroiinformadmin.core.data.models.ProjectStartRequest
+import com.vasmarfas.mosstroiinformadmin.core.data.models.Document
 import com.vasmarfas.mosstroiinformadmin.core.network.ApiConfig
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -37,5 +38,9 @@ class ProjectsApi(private val client: HttpClient) {
             contentType(ContentType.Application.Json)
             setBody(ProjectStartRequest(address))
         }
+    }
+    
+    suspend fun getProjectDocuments(projectId: String): List<Document> {
+        return client.get(ApiConfig.Projects.documents(projectId)).body()
     }
 }

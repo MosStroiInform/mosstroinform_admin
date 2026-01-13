@@ -25,6 +25,7 @@ object ApiConfig {
         fun byId(id: String) = "$API_VERSION/projects/$id"
         fun request(id: String) = "$API_VERSION/projects/$id/request"
         fun start(id: String) = "$API_VERSION/projects/$id/start"
+        fun documents(projectId: String) = "$API_VERSION/projects/$projectId/documents"
     }
     
     object Documents {
@@ -96,6 +97,9 @@ object ApiConfig {
         fun createCamera(siteId: String) = "$API_VERSION/admin/construction-sites/$siteId/cameras"
         fun updateCamera(siteId: String, cameraId: String) = "$API_VERSION/admin/construction-sites/$siteId/cameras/$cameraId"
         fun deleteCamera(siteId: String, cameraId: String) = "$API_VERSION/admin/construction-sites/$siteId/cameras/$cameraId"
+        
+        // Управление документами проекта
+        fun createProjectDocument(projectId: String) = "$API_VERSION/admin/projects/$projectId/documents"
         
         // Уведомления
         const val NOTIFICATIONS = "$API_VERSION/admin/notifications"

@@ -3,11 +3,14 @@ package com.vasmarfas.mosstroiinformadmin.features.projects.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Project
+import com.vasmarfas.mosstroiinformadmin.core.data.models.Document
+import com.vasmarfas.mosstroiinformadmin.core.data.models.CreateDocumentRequest
 import com.vasmarfas.mosstroiinformadmin.core.network.ApiResult
 import com.vasmarfas.mosstroiinformadmin.features.projects.data.ProjectsRepository
 import com.vasmarfas.mosstroiinformadmin.features.construction.data.ConstructionSitesRepository
 import com.vasmarfas.mosstroiinformadmin.features.admin.data.AdminRepository
 import com.vasmarfas.mosstroiinformadmin.features.completion.data.CompletionRepository
+import com.vasmarfas.mosstroiinformadmin.features.documents.data.DocumentsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +24,10 @@ data class ProjectDetailState(
     val isRequestingConstruction: Boolean = false,
     val isStartingConstruction: Boolean = false,
     val updatingStageId: String? = null,
-    val actionSuccess: Boolean = false
+    val actionSuccess: Boolean = false,
+    val documents: List<Document> = emptyList(),
+    val isLoadingDocuments: Boolean = false,
+    val isCreatingDocument: Boolean = false
 )
 
 class ProjectDetailViewModel(
@@ -29,7 +35,8 @@ class ProjectDetailViewModel(
     private val repository: ProjectsRepository,
     private val sitesRepository: ConstructionSitesRepository,
     private val adminRepository: AdminRepository,
-    private val completionRepository: CompletionRepository
+    private val completionRepository: CompletionRepository,
+    private val documentsRepository: DocumentsRepository
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(ProjectDetailState())
@@ -40,6 +47,7 @@ class ProjectDetailViewModel(
     init {
         currentProjectId = projectId
         loadProject()
+        loadDocuments()
     }
     
     // Проверяем, изменился ли projectId, и перезагружаем проект если нужно
@@ -68,6 +76,8 @@ class ProjectDetailViewModel(
                     
                     // Загружаем completion status для проверки is_completed
                     loadCompletionStatus(idToLoad)
+                    // Загружаем документы проекта
+                    loadDocuments()
                 }
                 is ApiResult.Error -> {
                     _state.value = _state.value.copy(
@@ -77,6 +87,31 @@ class ProjectDetailViewModel(
                 }
                 is ApiResult.Loading -> {
                     _state.value = _state.value.copy(isLoading = true)
+                }
+            }
+        }
+    }
+    
+    private fun loadDocuments() {
+        viewModelScope.launch {
+            val idToLoad = currentProjectId ?: projectId
+            _state.value = _state.value.copy(isLoadingDocuments = true)
+            
+            when (val result = repository.getProjectDocuments(idToLoad)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        isLoadingDocuments = false,
+                        documents = result.data
+                    )
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isLoadingDocuments = false,
+                        documents = emptyList()
+                    )
+                }
+                is ApiResult.Loading -> {
+                    _state.value = _state.value.copy(isLoadingDocuments = true)
                 }
             }
         }
@@ -162,6 +197,56 @@ class ProjectDetailViewModel(
         val idToLoad = currentProjectId ?: projectId
         loadProject()
         loadCompletionStatus(idToLoad)
+        loadDocuments()
+    }
+    
+    fun createDocument(title: String, description: String?, fileUrl: String?) {
+        viewModelScope.launch {
+            val idToUse = currentProjectId ?: projectId
+            _state.value = _state.value.copy(isCreatingDocument = true, error = null, actionSuccess = false)
+            
+            val request = CreateDocumentRequest(
+                title = title,
+                description = description?.takeIf { it.isNotBlank() },
+                fileUrl = fileUrl?.takeIf { it.isNotBlank() }
+            )
+            
+            when (val result = documentsRepository.createProjectDocument(idToUse, request)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        isCreatingDocument = false,
+                        actionSuccess = true
+                    )
+                    // Перезагружаем документы
+                    loadDocuments()
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(
+                        isCreatingDocument = false,
+                        error = result.message
+                    )
+                }
+                is ApiResult.Loading -> {}
+            }
+        }
+    }
+    
+    fun approveDocument(documentId: String) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(error = null, actionSuccess = false)
+            
+            when (val result = documentsRepository.approveDocument(documentId)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(actionSuccess = true)
+                    // Перезагружаем документы
+                    loadDocuments()
+                }
+                is ApiResult.Error -> {
+                    _state.value = _state.value.copy(error = result.message)
+                }
+                is ApiResult.Loading -> {}
+            }
+        }
     }
 
     fun updateStageStatus(stageId: String, status: String) {

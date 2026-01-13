@@ -11,6 +11,6 @@ val projectsModule = module {
     single { ProjectsApi(get()) }
     single { ProjectsRepository(get()) }
     viewModel { ProjectsListViewModel(get(), get()) } // Добавлен CompletionRepository
-    viewModel { params -> ProjectDetailViewModel(params.get(), get(), get(), get(), get()) } // Добавлен CompletionRepository
+    viewModel { params -> ProjectDetailViewModel(params.get(), get(), get(), get(), get(), get()) } // projectId, ProjectsRepository, ConstructionSitesRepository, AdminRepository, CompletionRepository, DocumentsRepository
 }
 

@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -19,6 +20,8 @@ import com.vasmarfas.mosstroiinformadmin.core.data.models.Project
 import com.vasmarfas.mosstroiinformadmin.core.data.models.ProjectStage
 import com.vasmarfas.mosstroiinformadmin.core.data.models.ProjectStatus
 import com.vasmarfas.mosstroiinformadmin.core.data.models.StageStatus
+import com.vasmarfas.mosstroiinformadmin.core.data.models.Document
+import com.vasmarfas.mosstroiinformadmin.core.data.models.DocumentStatus
 import com.vasmarfas.mosstroiinformadmin.core.theme.AdminTheme
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.ErrorView
 import com.vasmarfas.mosstroiinformadmin.core.ui.components.LoadingIndicator
@@ -65,6 +68,7 @@ private fun ProjectDetailScreenContent(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showStartDialog by remember { mutableStateOf(false) }
+    var showCreateDocumentDialog by remember { mutableStateOf(false) }
     
     // Snackbar для успеха
     LaunchedEffect(state.actionSuccess) {
@@ -142,6 +146,19 @@ private fun ProjectDetailScreenContent(
                             )
                         }
                         
+                        // Документы проекта (показываем только для запрошенных проектов)
+                        if (state.project?.status == "requested") {
+                            item {
+                                DocumentsSection(
+                                    documents = state.documents,
+                                    isLoading = state.isLoadingDocuments,
+                                    isCreating = state.isCreatingDocument,
+                                    onCreateDocument = { showCreateDocumentDialog = true },
+                                    onApproveDocument = { documentId -> viewModel.approveDocument(documentId) }
+                                )
+                            }
+                        }
+                        
                         // Этапы
                         state.project?.stages?.takeIf { it.isNotEmpty() }?.let { stages ->
                             item {
@@ -188,6 +205,17 @@ private fun ProjectDetailScreenContent(
             onConfirm = { address ->
                 viewModel.startConstruction(address)
                 showStartDialog = false
+            }
+        )
+    }
+    
+    // Диалог создания документа
+    if (showCreateDocumentDialog) {
+        CreateDocumentDialog(
+            onDismiss = { showCreateDocumentDialog = false },
+            onConfirm = { title, description, fileUrl ->
+                viewModel.createDocument(title, description, fileUrl)
+                showCreateDocumentDialog = false
             }
         )
     }
@@ -794,5 +822,278 @@ private fun ProjectDetailScreenContentPreview() {
             )
         }
     }
+}
+
+@Composable
+private fun DocumentsSection(
+    documents: List<Document>,
+    isLoading: Boolean,
+    isCreating: Boolean,
+    onCreateDocument: () -> Unit,
+    onApproveDocument: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Заголовок с кнопкой добавления
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Документы для согласования (${documents.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(
+                    onClick = onCreateDocument,
+                    enabled = !isCreating
+                ) {
+                    if (isCreating) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Добавить документ"
+                        )
+                    }
+                }
+            }
+            
+            HorizontalDivider()
+            
+            // Список документов
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (documents.isEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Description,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text(
+                            text = "Нет документов",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Добавьте документы для согласования покупателем",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                documents.forEach { document ->
+                    DocumentCard(
+                        document = document,
+                        onApprove = { onApproveDocument(document.id) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DocumentCard(
+    document: Document,
+    onApprove: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = document.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                StatusBadge(
+                    status = when {
+                        document.approvedAt != null -> "Одобрен админом"
+                        document.signedAt != null -> "Подписан покупателем"
+                        document.status == "rejected" -> "Отклонен"
+                        else -> "Ожидает"
+                    }
+                )
+            }
+            
+            if (!document.description.isNullOrBlank()) {
+                Text(
+                    text = document.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            if (document.fileUrl != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AttachFile,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Файл прикреплен",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            
+            if (document.signedAt != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Подписан покупателем",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            
+            // Кнопка одобрения - показываем только если документ подписан покупателем, но еще не одобрен админом
+            // Проверяем approvedAt == null, потому что после подписания покупателем статус уже APPROVED
+            if (document.signedAt != null && document.approvedAt == null) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                Button(
+                    onClick = onApprove,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Одобрить документ")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CreateDocumentDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String?, String?) -> Unit
+) {
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var fileUrl by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.Default.Add,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        title = { Text("Добавить документ") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Название документа *") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Описание") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4
+                )
+                OutlinedTextField(
+                    value = fileUrl,
+                    onValueChange = { fileUrl = it },
+                    label = { Text("URL файла (опционально)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    placeholder = { Text("https://example.com/document.pdf") }
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(title, description.ifBlank { null }, fileUrl.ifBlank { null }) },
+                enabled = title.isNotBlank()
+            ) {
+                Text("Создать")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Отмена")
+            }
+        }
+    )
 }
 

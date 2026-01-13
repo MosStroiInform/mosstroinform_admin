@@ -1,6 +1,7 @@
 package com.vasmarfas.mosstroiinformadmin.features.documents.data
 
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Document
+import com.vasmarfas.mosstroiinformadmin.core.data.models.CreateDocumentRequest
 import com.vasmarfas.mosstroiinformadmin.core.network.ApiResult
 
 class DocumentsRepository(private val api: DocumentsApi) {
@@ -38,6 +39,15 @@ class DocumentsRepository(private val api: DocumentsApi) {
             ApiResult.Success(Unit)
         } catch (e: Exception) {
             ApiResult.Error(e.message ?: "Ошибка отклонения документа")
+        }
+    }
+    
+    suspend fun createProjectDocument(projectId: String, request: CreateDocumentRequest): ApiResult<Document> {
+        return try {
+            val document = api.createProjectDocument(projectId, request)
+            ApiResult.Success(document)
+        } catch (e: Exception) {
+            ApiResult.Error(e.message ?: "Ошибка создания документа")
         }
     }
 }

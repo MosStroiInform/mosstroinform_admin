@@ -111,4 +111,15 @@ class ProjectsRepository(private val api: ProjectsApi) {
             ApiResult.Error(e.message ?: "Ошибка начала строительства")
         }
     }
+    
+    suspend fun getProjectDocuments(projectId: String): ApiResult<List<com.vasmarfas.mosstroiinformadmin.core.data.models.Document>> {
+        return try {
+            val documents = retryOnTimeout {
+                api.getProjectDocuments(projectId)
+            }
+            ApiResult.Success(documents)
+        } catch (e: Exception) {
+            ApiResult.Error(e.message ?: "Ошибка загрузки документов проекта")
+        }
+    }
 }

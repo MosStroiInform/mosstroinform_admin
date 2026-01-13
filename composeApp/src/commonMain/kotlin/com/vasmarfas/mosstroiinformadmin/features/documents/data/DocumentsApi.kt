@@ -2,6 +2,7 @@ package com.vasmarfas.mosstroiinformadmin.features.documents.data
 
 import com.vasmarfas.mosstroiinformadmin.core.data.models.Document
 import com.vasmarfas.mosstroiinformadmin.core.data.models.RejectDocumentRequest
+import com.vasmarfas.mosstroiinformadmin.core.data.models.CreateDocumentRequest
 import com.vasmarfas.mosstroiinformadmin.core.network.ApiConfig
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -27,6 +28,13 @@ class DocumentsApi(private val client: HttpClient) {
             contentType(ContentType.Application.Json)
             setBody(RejectDocumentRequest(reason))
         }
+    }
+    
+    suspend fun createProjectDocument(projectId: String, request: CreateDocumentRequest): Document {
+        return client.post(ApiConfig.Admin.createProjectDocument(projectId)) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
     }
 }
 
