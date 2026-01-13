@@ -285,33 +285,33 @@ private fun ProjectCard(
             }
             
             // Кнопки управления запросами
-            if (project.status == "requested") {
-                HorizontalDivider(modifier = Modifier.fillMaxWidth())
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { onRejectRequest?.invoke(project.id) },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Отклонить")
-                    }
-                    Button(
-                        onClick = { onApproveRequest?.invoke(project.id) },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Одобрить")
-                    }
-                }
-            }
+//            if (project.status == "requested") {
+//                HorizontalDivider(modifier = Modifier.fillMaxWidth())
+//                Row(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+//                ) {
+//                    OutlinedButton(
+//                        onClick = { onRejectRequest?.invoke(project.id) },
+//                        modifier = Modifier.weight(1f),
+//                        colors = ButtonDefaults.outlinedButtonColors(
+//                            contentColor = MaterialTheme.colorScheme.error
+//                        )
+//                    ) {
+//                        Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
+//                        Spacer(Modifier.width(4.dp))
+//                        Text("Отклонить")
+//                    }
+//                    Button(
+//                        onClick = { onApproveRequest?.invoke(project.id) },
+//                        modifier = Modifier.weight(1f)
+//                    ) {
+//                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+//                        Spacer(Modifier.width(4.dp))
+//                        Text("Одобрить")
+//                    }
+//                }
+//            }
         }
     }
 }
